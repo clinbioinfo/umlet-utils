@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="13.0">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>20</x>
+      <y>20</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>MedImmune::VennDiagram::Writer
+//use MedImmune::VennDiagram::Record
+//use MedImmune::Date::Util
+//extends MedImmune::Writer
+--
+-infile:string
+-outfile:str
+--
+doSomething()
+_secretSauce()
+_secretPassage()</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>
