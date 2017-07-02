@@ -188,7 +188,10 @@ sub _parse_file {
         if ($line =~ m|^\s*$|){
             next;
         }
-        elsif ($line =~ m|^sub (\s+)\s*\{\s*$|){
+        elsif ($line =~ m|^package\s+(\S+)\s*;\s*$|){
+            $self->{_lookup}->{package_name} = $1;
+        }
+        elsif ($line =~ m|^sub (\S+)\s*\{\s*$|){
             push(@{$self->{_lookup}->{sub_list}}, $1);
         }
         elsif ($line =~ m|^use constant (\S+)\s*=>\s*(\S+)$|){

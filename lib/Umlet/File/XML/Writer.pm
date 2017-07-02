@@ -151,6 +151,52 @@ sub writeFile{
 
 }
 
+sub _load_class_content {
+
+    my $self = shift;
+    my ($class_lookup_list) = @_;
+
+    my $content_list = [];
+
+    foreach my $class_lookup (@{$class_lookup_list}){
+
+
+        push(@{$content_list}, $class_lookup->{package_name}); 
+
+        push(@{$content_list}, '--');
+
+        if (exists $class_lookup->{use_list}){
+
+            foreach my $use (sort @{$class_lookup->{use_list}}){
+
+            push(@{$content_list}, "//$use");
+        }
+
+        if (exists $class_lookup->{extends_list}){
+
+            foreach my $extends (sort @{$class_lookup->{extends_list}}){
+
+            push(@{$content_list}, "//$extends");
+        }
+
+
+        if (exists $class_lookup->{constant_list}){
+
+            foreach my $constant_array (sort @{$class_lookup->{constant_list}}){
+
+            push(@{$content_list}, "//constant $constant_array->[0] => $constant_array->[1]");
+        }
+
+        push(@{$content_list}, '--');
+
+        if (exists $class_lookup->{sub_list}){
+
+            foreach my $sub (sort @{$class_lookup->{sub_list}}){
+
+            push(@{$content_list}, "$sub()");
+        }
+    }
+}
 
 
 
