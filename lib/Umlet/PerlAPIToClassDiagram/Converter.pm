@@ -203,33 +203,47 @@ sub runConversion {
         push(@{$self->{_file_list}}, $infile);
     }
 
-    my $file_ctr = 0;
+    if ((exists $self->{_file_list}) && (scalar($self->{_file_list}) > 0)){
 
-    foreach my $file (@{$self->{_file_list}}){
+        my $file_ctr = 0;
 
-        $file_ctr++;
+        foreach my $file (@{$self->{_file_list}}){
 
-        my $parser = new Umlet::Perl::Module::File::Parser(infile => $file);
+            if ($self->getVerbose()){
+                print "Processing file '$file'\n";
+            }
 
-        if (!defined($parser)){
-            $self->{_logger}->logconfess("Could not instantiate Umlet::Perl::Module::File::Parser");
+            $self->{_logger}->info("Processing file '$file'");
+
+            $file_ctr++;
+
+            my $parser = new Umlet::Perl::Module::File::Parser(infile => $file);
+
+            if (!defined($parser)){
+                $self->{_logger}->logconfess("Could not instantiate Umlet::Perl::Module::File::Parser");
+            }
+
+            my $lookup = $parser->getLookup();
+            if (!defined($lookup)){
+                $self->{_logger}->logconfess("lookup was not defined for file '$file'");
+            }
+
+            push(@{$self->{_class_lookup_list}}, $lookup);
         }
 
-        my $lookup = $parser->getLookup();
-        if (!defined($lookup)){
-            $self->{_logger}->logconfess("lookup was not defined for file '$file'");
+        if ($self->getVerbose()){
+            print "Processed '$file_ctr' Perl module files\n";
         }
 
-        push(@{$self->{_class_lookup_list}}, $lookup);
+
+        $self->{_writer}->writeFile($self->{_class_lookup_list});
     }
-
-    if ($self->getVerbose()){
-        print "Processed '$file_ctr' Perl module files\n";
+    else {
+        printBoldRed("Looks like there are no file to be processed.");
+        exit(1);
     }
-
-
-    $self->{_writer}->writeFile($self->{_class_lookup_list});
 }
+
 
 sub _get_file_list_from_indir {
 
@@ -240,7 +254,9 @@ sub _get_file_list_from_indir {
 
     my $file_list = $self->_execute_cmd($cmd);
 
-    return $file_list;
+    foreach my $file (@{$file_list}){
+        push(@{$self->{_file_list}}, $file);
+    }
 }
 
 sub _execute_cmd {

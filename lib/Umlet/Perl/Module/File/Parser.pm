@@ -1,6 +1,7 @@
 package Umlet::Perl::Module::File::Parser;
 
 use Moose;
+use Cwd;
 use Term::ANSIColor;
 use File::Slurp;
 
@@ -200,8 +201,11 @@ sub _parse_file {
         elsif ($line =~ m|^extends \'(\S+)\';\s*$|){
             push(@{$self->{_lookup}->{extends_list}}, $1);
         }
-        elsif ($line =~ m|^use (S+);\s*$|){
+        elsif ($line =~ m|^use (\S+);\s*$|){
             push(@{$self->{_lookup}->{use_list}}, $1);
+        }
+        elsif ($line =~ m|^has \'(\S+)\'|){
+            push(@{$self->{_lookup}->{has_list}}, $1);
         }
     }
 

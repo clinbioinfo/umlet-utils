@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 use strict;
+use Cwd;
 use Carp;
 use File::Path;
 use File::Basename;
@@ -22,6 +23,8 @@ use constant DEFAULT_VERBOSE => FALSE;
 
 use constant DEFAULT_USERNAME => $ENV{USER};
 
+use constant DEFAULT_INDIR => File::Spec->rel2abs(cwd());
+
 use constant DEFAULT_LOG_LEVEL => 4;
 
 use constant DEFAULT_OUTDIR => '/tmp/' . DEFAULT_USERNAME . '/' . File::Basename::basename($0) . '/' . time();
@@ -34,6 +37,7 @@ $|=1; ## do not buffer output stream
 my ($infile, 
     $indir,
     $outdir, 
+    $outfile,
     $log_level, 
     $help, 
     $logfile, 
@@ -50,6 +54,7 @@ my $results = GetOptions (
       'indir=s'                 => \$indir,
       'config_file=s'           => \$config_file,
       'outdir=s'                => \$outdir,
+      'outfile=s'               => \$outfile,
       'logfile=s'               => \$logfile,
       'verbose=s'               => \$verbose,
 );
@@ -69,6 +74,7 @@ my $converter = Umlet::PerlAPIToClassDiagram::Converter::getInstance(
     config_file          => $config_file,
     outdir               => $outdir,
     verbose              => $verbose,
+    outfile              => $outfile
     );
 
 if (!defined($converter)){
@@ -139,9 +145,14 @@ sub checkCommandLineArguments {
     if (!defined($infile)){
 
         if (!defined($indir)){
+
             $indir = DEFAULT_INDIR;
+            
             printYellow("Neither --infile nor --indir were specified and therefore indir was set to default '$indir'");
         }
+
+
+        $indir = File::Spec->rel2abs($indir);
     }
     else {
 
@@ -175,14 +186,14 @@ sub checkCommandLineArguments {
 
         $log_level = DEFAULT_LOG_LEVEL;
         
-        printYellow("--log_level was not specified and therefore was set to '$log_level'");        
+        printYellow("--log_level was not specified and therefore was set to default '$log_level'");        
     }
 
     if (!defined($outdir)){
 
-        $outdir = DEFAULT_OUTDIR_BASE . &getInputFileBasename($infile) . '/' . time();
+        $outdir = DEFAULT_OUTDIR;
 
-        printYellow("--outdir was not specified and therefore was set to '$outdir'");
+        printYellow("--outdir was not specified and therefore was set to default '$outdir'");
     }
 
     if (!-e $outdir){
