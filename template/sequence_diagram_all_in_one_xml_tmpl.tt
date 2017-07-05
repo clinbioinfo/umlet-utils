@@ -1,0 +1,14 @@
+<element>
+  <id>UMLSequenceAllInOne</id>
+  <coordinates>
+    <x>[% x_coord %]</x>
+    <y>[% y_coord %]</y>
+    <w>[% w_coord %]</w>
+    <h>[% h_coord %]</h>
+  </coordinates>
+  <panel_attributes>
+  [% title %]
+  [% panel_attributes%]
+  </panel_attributes>
+  <additional_attributes/>
+</element>
