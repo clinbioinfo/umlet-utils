@@ -5,8 +5,6 @@ use Cwd;
 use Term::ANSIColor;
 
 use Umlet::Config::Manager;
-use Umlet::File::XML::Parser;
-use Umlet::Perl::Module::File::Writer;
 
 use constant TRUE  => 1;
 
@@ -143,9 +141,9 @@ sub BUILD {
 
     $self->_initConfigManager(@_);
 
-    $self->_initUmletParser(@_);
+    $self->_initUmletFileParser(@_);
 
-    $self->_initPerlModuleWriter(@_);
+    $self->_initAPIWriter(@_);
 
     $self->{_logger}->info("Instantiated ". __PACKAGE__);
 }
@@ -175,29 +173,6 @@ sub _initConfigManager {
     $self->{_config_manager} = $manager;
 }
 
-sub _initUmletParser {
-
-    my $self = shift;
-
-    my $parser = Umlet::File::XML::Parser::getInstance(@_);
-    if (!defined($parser)){
-        $self->{_logger}->logconfess("Could not instantiate Umlet::File::XML::Parser");
-    }
-
-    $self->{_parser} = $parser;
-}
-
-sub _initPerlModuleWriter {
-
-    my $self = shift;
-
-    my $writer = new Umlet::Perl::Module::File::Writer(@_);
-    if (!defined($writer)){
-        $self->{_logger}->logconfess("Could not instantiate Umlet::Perl::Module::File::Writer");
-    }
-
-    $self->{_writer} = $writer;
-}
 
 sub printBoldRed {
 
@@ -231,40 +206,6 @@ sub run {
     $self->runConversion(@_);
 }
 
-sub runConversion {
-
-    my $self = shift;
-    
-    my $module_count = $self->{_parser}->getModuleCount();
-    if (!defined($module_count)){
-        $self->{_logger}->logconfess("module_count was not defined");
-    }
-
-    if ($module_count > 0){
-
-        my $module_lookup = $self->{_parser}->getModuleLookup();
-        if (!defined($module_lookup)){
-            $self->{_logger}->logconfess("module_lookup was not defined");
-        }
-
-        # &parseUxfFile($infile);
-
-        $self->{_writer}->createAPI($module_lookup);
-
-        # &createAPI();
-
-        if ($self->getVerbose()){
-
-            print "Conversion completed.\n";
-
-            print "See output files in directory '$self->getOutdir()'\n";
-        }
-    }
-    else {
-        printBoldRed("There were no modules to process");
-        exit(1);
-    }
-}
 
 
 no Moose;

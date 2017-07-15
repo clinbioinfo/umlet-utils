@@ -12,7 +12,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 
 use Umlet::Logger;
-use Umlet::Converter;
+use Umlet::ClassDiagram::JavaScript::API::Converter;
 
 use constant TRUE => 1;
 
@@ -22,7 +22,7 @@ use constant DEFAULT_VERBOSE => FALSE;
 
 use constant DEFAULT_USERNAME => $ENV{USER};
 
-use constant DEFAULT_LOG_LEVEL => 3;
+use constant DEFAULT_LOG_LEVEL => 4;
 
 use constant DEFAULT_SUPPRESS_CHECKPOINTS => FALSE;
 
@@ -82,7 +82,7 @@ if (!defined($logger)){
     die "Could not instantiate Umlet::Logger";
 }
 
-my $converter = Umlet::Converter::getInstance(
+my $converter = Umlet::ClassDiagram::JavaScript::API::Converter::getInstance(
     config_file          => $config_file,
     infile               => $infile,
     outdir               => $outdir,

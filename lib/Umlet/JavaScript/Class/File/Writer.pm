@@ -7,6 +7,7 @@ use Data::Dumper;
 use File::Path;
 use FindBin;
 use Term::ANSIColor;
+use Template;
 
 use Umlet::Config::Manager;
 
@@ -70,9 +71,11 @@ sub BUILD {
 sub _create_api {
 
     my $self = shift;
-    my ($class_lookup) = @_;
+    my ($master_lookup) = @_;
 
-    $self->{_class_lookup} = $class_lookup;
+    # $self->{_class_lookup} = $master_lookup;
+
+    # print Dumper $master_lookup;die;
 
     my $outdir = $self->getOutdir();
 
@@ -82,14 +85,17 @@ sub _create_api {
 
     $self->{_logger}->info("About to create the JavaScript API in directory '$outdir'");
 
-    foreach my $namespace (sort keys %{$class_lookup}){
+    foreach my $namespace (sort keys %{$master_lookup}){
 
-        my $lookup = $class_lookup->{$namespace};
+        print "Processing JavaScript class '$namespace'\n";
 
-        if ($self->getSkipGreenModules()){
+        $self->{_logger}->info("Processing JavaScript class '$namespace'");        
 
-            if ((exists $class_lookup->{$namespace}->{already_implemented}) && 
-                ($class_lookup->{$namespace}->{already_implemented} ==  TRUE)){
+
+        if ((exists $master_lookup->{$namespace}->{already_implemented}) && 
+            ($master_lookup->{$namespace}->{already_implemented} ==  TRUE)){
+
+            if ($self->getSkipGreenModules()){
 
                 $self->{_logger}->info("Will skip creation of module '$namespace' since UXF indicates the module has already been implemented");
                 
@@ -97,37 +103,41 @@ sub _create_api {
             }
         }
 
+        $self->{_current_class_is_singleton} = TRUE;
 
-        $self->_add_package_name($namespace, $lookup);
-        
-        $self->_add_provenance_info($outfile);
-        
-        $self->_add_package_pod($namespace, $lookup);
-        
-        $self->_add_dependencies($namespace, $lookup);
-        
-        $self->_add_extends($namespace, $lookup);
-        
-        $self->_add_constants($namespace, $lookup);
-        
-        $self->_add_instance_private_member($namespace, $lookup);
-        
-        $self->_add_private_data_members($namespace, $lookup);
-        
-        $self->_add_get_instance_method($namespace, $lookup);
-        
-        $self->_add_build_method($namespace, $lookup);
-        
-        $self->_add_private_methods($namespace, $lookup);
-        
-        $self->_add_public_methods($namespace, $lookup);
+        $self->{_current_namespace} = $namespace;
 
-        if ($namespace =~ /Factory/){
-            $self->_add_factory_module_specific_methods($namespace, $lookup);
+        $self->{_current_javascript_namespace} = $self->_derive_javascript_namespace();
+
+        $self->{_current_class_lookup} = $master_lookup->{$namespace};
+
+        # $self->{_logger}->fatal(Dumper $self->{_current_class_lookup});
+
+        $self->_derive_class_details();
+
+        $self->_derive_constants($master_lookup->{$namespace});
+
+        $self->_derive_private_data_members($master_lookup->{$namespace});
+
+        $self->_derive_dependencies_variables($master_lookup->{$namespace});
+
+        # $self->_derive_dependencies_instantiations();
+
+        $self->_derive_functions($master_lookup->{$namespace});
+
+        $self->_derive_return_function_list($master_lookup->{$namespace});
+  
+        my $template_file = $self->getClassTemplateFile();
+
+        if ($self->{_current_class_is_singleton}){
+
+            $template_file = $self->getSingletonClassTemplateFile();
+        }
+        else {
+            $template_file = $self->getSingletonClassTemplateFile();
         }
 
-        
-        $self->_write_file($namespace);
+        $self->_write_file($template_file);
     }
 
     if ($self->getVerbose()){
@@ -138,831 +148,400 @@ sub _create_api {
 }
 
 
-sub _print_summary {
-
-    my $self = shift;
-    
-    print "Created the following test scripts:\n";
-    print join("\n", @{$self->{_test_script_file_list}}) . "\n";
-
-    print "\nCreated the following test scripts:\n";
-    print join("\n", @{$self->{_module_file_list}}) . "\n";
-}
-
-sub _add_package_name {
-
-    my $self = shift;
-    
-    my ($namespace, $lookup) = @_;
-    
-    print OUTFILE "package $namespace;\n\n";
-}
-
-sub _add_provenance_info {
+sub _derive_javascript_namespace {
 
     my $self = shift;
 
-    my ($outfile) = @_;
+    my $namespace = $self->{_current_namespace};
 
-    print OUTFILE "## [RCS_TRIPWIRE] After this module has been reviewed, the following lines can be deleted:\n";
-    print OUTFILE "## [RCS_TRIPWIRE] method-created: " . File::Spec->rel2abs($0) . "\n";
-    print OUTFILE "## [RCS_TRIPWIRE] date-created: " . localtime() . "\n";
-    print OUTFILE "## [RCS_TRIPWIRE] created-by: " . getlogin . "\n";
-    print OUTFILE "## [RCS_TRIPWIRE] input-umlet-file: " . File::Spec->rel2abs($self->getInfile()) . "\n";
-    print OUTFILE "## [RCS_TRIPWIRE] output-directory: " . File::Spec->rel2abs($self->getOutdir()) . "\n";
+    if ($namespace =~ m|::|){
 
-}
-
-sub _add_package_pod {
-
-    my $self = shift;
-
-    my ($namespace, $lookup) = @_;
-
-    print OUTFILE "\n\n";
-    print OUTFILE '=head1 NAME' . "\n\n";
-    print OUTFILE ' ' . $namespace . "\n\n";
-    print OUTFILE ' [RCS_TRIPWIRE] INSERT ONE LINE DESCRIPTION HERE.' . "\n\n";
-    print OUTFILE '=head1 VERSION' . "\n\n";
-    print OUTFILE ' ' . $self->getSoftwareVersion() . "\n\n";
-    print OUTFILE '=head1 SYNOPSIS' . "\n\n";
-    print OUTFILE ' use ' . $namespace . ';' . "\n";
-    print OUTFILE ' [RCS_TRIPWIRE] INSERT SHORT SYNOPSIS HERE.'. "\n\n";
-    print OUTFILE '=head1 AUTHOR' . "\n\n";
-    print OUTFILE ' ' . $self->getSoftwareAuthor()  . "\n\n";
-    print OUTFILE ' ' . $self->getAuthorEmailAddress() . "\n\n";
-    print OUTFILE '=head1 METHODS' . "\n\n";
-    print OUTFILE '=over 4' . "\n\n";
-    print OUTFILE '=cut' . "\n\n";
-}
-
-sub _add_dependencies {
-
-    my $self = shift;
-
-    my ($namespace, $lookup) = @_;
-
-    print OUTFILE "\n";
-    print OUTFILE "use Moose;\n";
-
-    my $ctr = 0 ;
-
-    if (( exists $lookup->{depends_on_list}) && 
-        ( defined $lookup->{depends_on_list})){
-
-        foreach my $dependency (@{$lookup->{depends_on_list}}){
-            
-            print OUTFILE "use $dependency;\n";
-            
-            $ctr++;
-        }
-    }
-
-    if ($self->getVerbose()){
-        print "Added '$ctr' dependencies\n";
-    }
-
-    $self->{_logger}->info("Added '$ctr' dependencies");
-}
-
-sub _add_extends {
-
-    my $self = shift;
-
-    my ($namespace, $lookup) = @_;
-
-    print OUTFILE "\n";
-
-    my $ctr = 0 ;
-
-    if (( exists $lookup->{extends_list}) && 
-        ( defined $lookup->{extends_list})){
-
-        foreach my $extends (@{$lookup->{extends_list}}){
-            
-            print OUTFILE "extends '$extends';\n";
-            
-            $ctr++;
-        }
-    }
-
-    if ($self->getVerbose()){
-        print "Added '$ctr' extends clauses\n";
-    }
-
-    $self->{_logger}->info("Added '$ctr' extends clauses");
-}
-
-sub _add_constants {
-
-    my $self = shift;
-
-    my ($namespace, $lookup) = @_;
-
-    my $ctr = 0 ;
-
-    ## Always add the TRUE, FALSE constants to the top of each module
-    print OUTFILE "\nuse constant TRUE  => 1;\n";
-    print OUTFILE "use constant FALSE => 0;\n";
-
-    if (( exists $lookup->{constant_list}) &&
-        ( defined $lookup->{constant_list})){
-
-        print OUTFILE "\n";
+        my $original = $namespace;
         
-        foreach my $constantArrayRef (@{$lookup->{constant_list}}){
+        $namespace =~ s|::|\.|g;
+        
+        $self->{_logger}->info("Changed the namespace from '$original' to '$namespace'");
+    }
+
+    return $namespace;    
+}
+
+
+sub _derive_class_details {
+
+    my $self = shift;
+
+    $self->_derive_instance_variable_name();
+
+    $self->_derive_namespace_declaration();
+}
+
+
+sub _derive_instance_variable_name {
+
+    my $self = shift;
+
+    my $namespace = $self->{_current_javascript_namespace};
+
+    $namespace =~ s|::||g;
+
+    $namespace =~ s|\.||g;
+    
+    $self->{_instance_variable_name} = lcfirst($namespace) . 'Instance';
+}
+
+
+sub _derive_namespace_declaration {
+
+    my $self = shift;
+
+    my @parts = split(/\./, $self->{_current_javascript_namespace});
+
+    my $portion;
+
+    my $ctr = 0;
+
+    my $content;
+
+    my $list = [];
+
+    for (my $i = 0; $i < scalar(@parts) ; $i++){
+
+        my $part = $parts[$i];
+
+        push(@{$list}, $part);
+
+        if ($i == 0){
+
+            $content = "var $part = $part || {};\n";                    
+        }
+        else {
+
+            my $compounded_parts = join('.', @{$list});
+
+            $content .= "$compounded_parts = $compounded_parts || {};\n";
+        }    
+    }
+    
+    $self->{_namespace_declaration_content} = $content;
+}
+
+sub _derive_private_data_members {
+
+    my $self = shift;
+    my ($class_lookup) = @_;
+
+    if (( exists $class_lookup->{private_data_members_list}) && 
+        ( defined $class_lookup->{private_data_members_list})){
+        
+        my $content = '';
+
+        foreach my $record (@{$class_lookup->{private_data_members_list}}){
+
+            my $name = $record->getName();
+
+            $content .= '    var ' . $name . "\n";
+
+        }
+
+        $self->{_private_data_members_content} = $content;
+    }
+    else {
+        $self->{_logger}->info("Looks like there are no private data members for class '$self->{_current_javascript_namespace}'");
+    }
+}
+
+
+sub _derive_dependencies_variables {
+
+    my $self = shift;
+
+
+    if (( exists $self->{_current_class_lookup}->{depends_on_list}) && 
+        ( defined $self->{_current_class_lookup}->{depends_on_list})){
+
+        my $variable_name_list = [];
+        
+        my $dependency_namespace_list = [];
+
+        my $lookup = {};
+
+        my $list = [];
+
+        foreach my $dependency (@{$self->{_current_class_lookup}->{depends_on_list}}){
             
-            my $name = $constantArrayRef->[0];
+            $dependency = $self->_derive_javascript_namespace($dependency);
+
+            push(@{$dependency_namespace_list}, $dependency);
+
+            $dependency =~ s|\.||g;
+
+            my $variable_name = lcfirst($dependency);
+
+            push(@{$list}, $variable_name);
+
+            $lookup->{$dependency} = $variable_name;
+        }
+
+        my $dependencies_variables_content = '';
+
+        foreach my $variable_name (@{$list}){
+            $dependencies_variables_content .= "let $variable_name;\n";
+        }
+
+        $self->{_dependencies_variables_content} = $dependencies_variables_content;
+
+
+
+        my $dependencies_instantiations_content = '';
+
+        foreach my $dependency (@{$dependency_namespace_list}){
+
+            my $variable_name = $lookup->{$dependency};
+            
+            $dependencies_instantiations_content .= "$variable_name = $dependency.getInstance();\n".
+            "if (!defined($variable_name)){\n".
+            "    throw new Error(\"Could not instantiate $dependency\");\n".
+            "}\n\n";
+        }
+
+
+        $self->{_dependencies_instantiations_content} = $dependencies_instantiations_content;
+
+    }
+    else {
+        $self->{_logger}->info("Looks like there are no dependencies for '$self->{_current_javascript_namespace}'");
+
+    }
+}
+
+
+sub _derive_functions_backup {
+
+    my $self = shift;
+
+
+    if (( exists $self->{_current_class_lookup}->{depends_on_list}) && 
+        ( defined $self->{_current_class_lookup}->{depends_on_list})){
+
+        foreach my $dependency (@{$self->{_current_class_lookup}->{depends_on_list}}){
+            
+            $dependency = $self->_derive_javascript_namespace($dependency);
+
+            $dependency =~ s|\.||g;
+
+            my $variable_name = lcfirst($dependency);
+
+            push(@{$self->{_dependencies_variables_list}}, $variable_name);
+
+            $self->{_dependency_namespace_lookup}->{$dependency} = $variable_name;
+
+        }
+    }
+    else {
+        $self->{_logger}->info("Looks like there are no dependencies for '$self->{_current_javascript_namespace}'");
+
+    }
+}
+
+sub _derive_constants {
+
+    my $self = shift;
+    my ($class_lookup) = @_;
+
+    if (( exists $class_lookup->{constant_list}) &&
+        ( defined $class_lookup->{constant_list})){
+
+        my $content = '';
+
+        foreach my $record (@{$class_lookup->{constant_list}}){
+            
+            my $name = $record->getName();
             
             if ((lc($name) eq 'true') || (lc($name) eq 'false')){
                 next;
             }
 
-            my $val = $constantArrayRef->[1];
+            my $val = $record->getValue();
             
             if (!defined($val)){
                 $val = undef;
             }
 
-            ## Automatically convert all uppercase
-            $name = uc($name);
-
-            print OUTFILE "use constant $name => $val;\n";
-            $ctr++;
-        }
-    }
-
-    if ($self->getVerbose()){
-        print "Added '$ctr' constants\n";
-    }
-
-    $self->{_logger}->info("Added '$ctr' constants");
-}
-
-sub _add_instance_private_member {
-
-    my $self = shift;
-
-    my ($namespace, $lookup) = @_;
-
-    if (( exists $lookup->{singleton}) &&
-        ( defined $lookup->{singleton})){
-        
-        print OUTFILE "\n";
-        print OUTFILE "## Singleton support\n";
-        print OUTFILE 'my $instance;' . "\n\n";
-
-        if ($self->getVerbose()){
-            print "Adding Singleton support for module '$namespace'\n";
+            $content .= "const $name = $val;\n";
         }
 
-        $self->{_logger}->info("Adding Singleton support for module '$namespace'");
-        
+        $self->{_constants_content} = $content;
     }
     else {
-        if ($self->getVerbose()){
-            print "module '$namespace' is not a singleton\n";
-        }
-    }       
-
-    $self->{_logger}->info("module '$namespace' is not a singleton");
-    
+        $self->{_logger}->info("Looks like there are no constants for class '$self->{_current_javascript_namespace}'");
+    }
 }
 
-sub _add_get_instance_method {
+
+sub _derive_functions {
 
     my $self = shift;
+    my ($class_lookup) = @_;
 
-    my ($namespace, $lookup) = @_;
+    $self->_derive_public_functions(@_);
 
-    if (( exists $lookup->{singleton}) &&
-        ( defined $lookup->{singleton})){
+    $self->_derive_private_functions(@_);
+}
 
-        print OUTFILE 'sub getInstance {' . "\n\n";
+sub _derive_private_functions {
 
+    my $self = shift;
+    my ($class_lookup) = @_;
 
-        if (! $self->getSuppressCheckpoints()){
-            print OUTFILE '    confess "CHECKPOINT"; ## [RCS_TRIPWIRE] Remove this line of code after reviewing this method.' . "\n\n";
-        }
-
-        print OUTFILE '    if (!defined($instance)){' . "\n";
-        print OUTFILE '        $instance = new ' . $namespace . '(@_);' . "\n";
-        print OUTFILE '        if (!defined($instance)){' . "\n";
-        print OUTFILE '            confess "Could not instantiate ' . $namespace . "\";\n";
-        print OUTFILE '        }' . "\n";
-        print OUTFILE '    }' . "\n";
-        print OUTFILE '    return $instance;' . "\n";
-        print OUTFILE '}' . "\n";
+    if (( exists $class_lookup->{private_methods_list}) && 
+        ( defined $class_lookup->{private_methods_list})){
         
-        if ($self->getVerbose()){
-            print "Added getInstance method\n";
+        my $content = '';
+
+        foreach my $record (@{$class_lookup->{private_methods_list}}){
+
+            $content .= 'const ' . $record->getName() . ' = function (){' . "\n".
+            '};' . "\n\n";
         }
 
-        $self->{_logger}->info("Added getInstance method");
+        $self->{_private_functions_content} = $content;
     }
     else {
-        if ($self->getVerbose()){
-            print "module '$namespace' is not a singleton\n";
-        }
-
-        $self->{_logger}->info("module '$namespace' is not a singleton");
-    }        
-}
-
-sub _add_private_data_members {
-
-    my $self = shift;
-
-    my ($namespace, $lookup) = @_;
-
-    my $ctr = 0 ;
-
-    if (( exists $lookup->{private_data_members_list}) &&
-        ( defined $lookup->{private_data_members_list})){
-
-        print OUTFILE "\n";
-    
-        foreach my $arrayRef (@{$lookup->{private_data_members_list}}){
-            
-            my $name = $arrayRef->[0];
-            
-            my $datatype = lc($arrayRef->[1]);
-
-            my $isa;
-
-            my $mooseMethodName = ucfirst(lc($name));
-
-            if (($datatype eq 'string') || ($datatype eq 'str')){
-                $isa = 'Str';
-            }
-            elsif (($datatype eq 'int') || ($datatype eq 'integer')){
-                $isa = 'Int';
-            }
-            elsif ($datatype eq 'float'){
-                $self->{_logger}->info("Will convert the float data type into Moose Num");
-                $isa = 'Num';
-            }
-            elsif ($datatype eq 'number'){
-                $self->{_logger}->info("Will convert the number data type into Moose Num");
-                $isa = 'Num';
-            }                
-            elsif ($datatype =~ /::/){
-                $isa = $datatype;
-            }
-            else {
-                $self->{_logger}->logconfess("Unrecognized data type '$datatype'");
-            }
-
-            print OUTFILE "has '$name' => (\n";
-            print OUTFILE "    is => 'rw',\n";
-            print OUTFILE "    isa => '$isa',\n";
-            print OUTFILE "    writer => 'set$mooseMethodName',\n";
-            print OUTFILE "    reader => 'get$mooseMethodName'";
-
-            if ($name ne lc($name)){
-
-                my $init_arg = decamelize($name);
-
-                print OUTFILE ",\n";
-                print OUTFILE "    init_arg => '$init_arg'";
-            }
-
-            print OUTFILE "    );\n\n";
-            $ctr++;
-        }
-    }
-
-    if ($self->getVerbose()){
-        print "Added '$ctr' private data members\n";
-    }
-}
-
-sub _add_build_method {
-
-    my $self = shift;
-    my ($namespace, $lookup) = @_;
-
-    print OUTFILE "\n";
-    print OUTFILE "sub BUILD {\n\n";
-
-    if (! $self->getSuppressCheckpoints()){
-        print OUTFILE '    confess "CHECKPOINT"; ## [RCS_TRIPWIRE] Remove this line of code after reviewing this method.' . "\n\n";
-    }
-
-    print OUTFILE '    my $self' ." = shift;\n\n";
-
-    my $initMethodLookup = {};
-    my $methodToModuleLookup = {};
-
-    my $ctr = 0;
-
-    print OUTFILE '    $self->_initLogger(@_);' . "\n";
-
-
-    if (( exists $lookup->{depends_on_list}) &&
-        ( defined $lookup->{depends_on_list})){
-
-        foreach my $dependency (@{$lookup->{depends_on_list}}){
-
-            my @parts = split(/::/, $dependency);
-            
-            my $dep = pop(@parts);
-
-            if (lc($dep) eq 'logger'){
-                next;
-            }
-
-            my $initMethodName = "_init". $dep;
- 
-            if (exists $methodToModuleLookup->{$initMethodName}){
-                my $namespace = pop(@parts);
-                $initMethodName = "_init". $namespace. $dep; 
-            }
-
-            $methodToModuleLookup->{$initMethodName} = $dependency;
-
- #           $initMethodLookup->{$initMethodName} = $dependency;
-           $initMethodLookup->{$dependency} = $initMethodName;
-            
-            print OUTFILE '    $self->' . $initMethodName ."(" .'@_' .");\n";
-            
-            $ctr++;
-        }
-
-    }
-
-    print OUTFILE "}\n\n";
-
-    if ($self->getVerbose()){
-        print "Added '$ctr' init methods to the BUILD method\n";
-    }
-
-    $self->{_logger}->info("Added '$ctr' init methods to the BUILD method");
-
-    $self->_add_init_logger_method();
-
-    if ($ctr > 0){
-
-        $self->_add_init_methods($initMethodLookup, $namespace);
-
-#        print "module '$namespace' initMethodLookup: " . Dumper $initMethodLookup;
-    }
-}
-    
-sub _add_init_logger_method {
-
-    my $self = shift;
-    
-    print OUTFILE "sub _initLogger {\n\n";
-    print OUTFILE '    my $self = shift;' . "\n\n";
-    print OUTFILE '    my $self->{_logger} = Log::Log4perl->get_logger(__PACKAGE__);' . "\n";
-    print OUTFILE '    if (!defined($self->{_logger})){' . "\n";
-    print OUTFILE '        confess "logger was not defined";' . "\n";
-    print OUTFILE "    }\n\n";
-    print OUTFILE '    $self->{_logger} = $self->{_logger};' . "\n";
-    print OUTFILE "}\n";
-}
-
-sub _add_init_methods {
-
-    my $self = shift;
-    my ($initMethodLookup, $namespace) = @_;
-
-    print OUTFILE "\n";
-
-    my $ctr = 0;
-
-    foreach my $module (sort {$a <=> $b } keys %{$initMethodLookup}){
-
-        if (exists $self->{_class_lookup}->{$namespace}->{factory_types_lookup}->{$module}){
-            next;
-        }
-
-        my $method = $initMethodLookup->{$module};
-
-        if ($method eq '_initLogger'){
-            next;
-        }
-
-#        my $module = $initMethodLookup->{$method};
-
-        my @parts = split(/::/, $module);
-
-        my $moduleBasename = pop(@parts);
-        
-        my $moduleVar = lc($moduleBasename);
-
-        print OUTFILE "sub $method {\n\n";
-
-        if (! $self->getSuppressCheckpoints()){
-            print OUTFILE '    confess "CHECKPOINT"; ## [RCS_TRIPWIRE] Remove this line of code after reviewing this method.' . "\n\n";
-        }
-        
-        print OUTFILE '    my $self = shift;'."\n\n";
-
-        if (( exists $self->{_class_lookup}->{$module}->{singleton}) && 
-            ( defined $self->{_class_lookup}->{$module}->{singleton})){
-            print OUTFILE '    my $' . $moduleVar . ' = ' . $module . '::getInstance(@_);' . "\n";
-        }
-        else {
-            print OUTFILE '    my $' . $moduleVar . ' = new ' . $module . '(@_);' . "\n";
-        }
-        print OUTFILE '    if (!defined($' . $moduleVar. ')){' . "\n";
-        print OUTFILE '        $self->{_logger}->logconfess("Could not instantiate ' . $module .'");' ."\n";
-        print OUTFILE "    }\n\n";
-        print OUTFILE '    $self->{_' .$moduleVar . '} = $'. $moduleVar . ";\n";
-        print OUTFILE "}\n\n";
-        
-        
-        $ctr++;
-    }
-
-    if ($self->getVerbose()){
-        print "Added '$ctr' init methods\n";
-    }
-
-    $self->{_logger}->info("Added '$ctr' init methods");
-}
-
-sub _add_public_methods {
-
-    my $self = shift;
-    my ($namespace, $lookup) = @_;
-
-    my $ctr = 0;
-
-    if (( exists $lookup->{public_methods_list}) && 
-        ( defined $lookup->{public_methods_list})){
-        
-        $self->_add_methods($namespace, $lookup, 'public');
-    }
-}
-
-sub _add_private_methods {
-
-    my $self = shift;
-    my ($namespace, $lookup) = @_;
-
-    if (( exists $lookup->{private_methods_list}) && 
-        ( defined $lookup->{private_methods_list})){
-        
-        $self->_add_methods($namespace, $lookup, 'private');
+        $self->{_logger}->info("Looks like there are no private methods/functions for class '$self->{_current_javascript_namespace}'");
     }
 }
             
-sub _add_methods {
+sub _derive_getters_and_setters {
 
     my $self = shift;
-    my ($namespace, $lookup, $methodType) = @_;
+    my ($class_lookup) = @_;
 
-    my $methodTypeKey = 'public_methods_list';
-
-    if ($methodType eq 'private'){
-        $methodTypeKey = 'private_methods_list';
-    }
-
-    my $ctr = 0;
-
-    foreach my $arrayRef (@{$lookup->{$methodTypeKey}}){
-
-        my $methodName = $arrayRef->[0];
-
-        if ($methodType eq 'private'){
-            $methodName = '_' . $arrayRef->[0];
-        }
-
-        ## Add the POD first
-        print OUTFILE '=item ' . $methodName . '()' . "\n\n";
-        print OUTFILE 'B<Description:> INSERT BRIEF DESCRIPTION HERE' . "\n\n";
-        print OUTFILE 'B<Parameters:> INSERT PARAMETERS HERE' . "\n\n";
-        print OUTFILE 'B<Returns:> INSERT RETURNS HERE' . "\n\n";
-        print OUTFILE '=cut' . "\n\n";
-
-        ## Add the method definition
-        print OUTFILE 'sub ' . $methodName . " {\n\n";
-
-        print OUTFILE '    my $self = shift;'."\n";
+    if (( exists $class_lookup->{private_data_members_list}) && 
+        ( defined $class_lookup->{private_data_members_list})){
         
-        
-        my $parameterList = $arrayRef->[1];
+        my $content = '';
 
-        if (defined($parameterList)){
+        foreach my $record (@{$class_lookup->{private_data_members_list}}){
 
-            $self->{_logger}->info("Will add parameters '$parameterList' to method '$methodName'");
+            my $name = $record->getName();
 
-            $parameterList =~ s/\s//g; ## Remove all whitespaces 
+            my $function_name = ucfirst(lc($name));
 
-            my @paramList = split(',', $parameterList);
+            $content .= '    const get' . $function_name . ' = function (){' . "\n";
+            $content .= '        return ' . $name . ';' . "\n";
+            $content .= '    };' . "\n\n";
 
-
-            my @argumentList;
-
-            foreach my $param (@paramList){
-                
-                push(@argumentList, '$'. $param);
-            }
-
-            my $argList = '    my (' . join(', ', @argumentList) . ') = @_;';                
-
-            print OUTFILE $argList . "\n\n";
-            
-            foreach my $param (@paramList){
-
-                print OUTFILE '    if (!defined($' . $param . ')){' . "\n";
-                print OUTFILE '        $self->{_logger}->logconfess("' . $param . ' was not defined");' . "\n";
-                print OUTFILE '    }' . "\n\n";
-            }
-
+            $content .= '    const set' . $function_name . ' = function (val){' . "\n";
+            $content .= '        ' . $name . ' = val;' . "\n";
+            $content .= '    };' . "\n\n";
 
         }
-        else {
-            $self->{_logger}->info("There were no parameters for method '$methodName'");
-        }
 
-
-        print OUTFILE "\n    confess \"NOT YET IMPLEMENTED\"; ## [RCS_TRIPWIRE]\n\n";
-
-        my $returnDataType = $arrayRef->[2];
-
-        if (defined($returnDataType)){
-            print OUTFILE '    my $returnVal; ## [RCS_TRIPWIRE] Should be defined as data type ' . $returnDataType . "\n\n";
-            print OUTFILE '    return $returnVal;' . "\n";
-        }
-        else {
-            $self->{_logger}->info("There was no return data type for method '$methodName'");
-        }           
-
-        print OUTFILE "}\n\n";
-
-        $ctr++;
-    }
-
-
-    if ($self->getVerbose()){
-        print "Added '$ctr' $methodType methods\n";
-    }
-
-    $self->{_logger}->info("Added '$ctr' $methodType methods");
-}
-
-
-sub _derive_script_name {
-
-    my $self = shift;
-    my ($namespace, $outdir) = @_;
-
-
-    if ($namespace =~ /::/){
-
-    my @parts = split(/::/, $namespace);
-
-    my $name = pop(@parts);
-
-    my $testScriptName = 'test' . $name . '.pl';
-
-    my $subdirName = join('::', @parts);
-
-    $subdirName =~ s/::/\//g;
-
-    my $dir = $outdir . '/test/' . $subdirName;
-
-    if (!-e $dir){
-
-        mkpath($dir) || $self->{_logger}->logconfess("Could not create directory '$dir' : $!");
-
-        $self->{_logger}->info("Created directory '$dir'");
-    }
-    
-    my $fqdName = $dir . '/' . $testScriptName;
-
-    return $fqdName;
+        $self->{_public_functions_content} = $content;
     }
     else {
-        $self->{_logger}->logconfess("Don't know how to process module '$namespace'");
+        $self->{_logger}->info("Looks like there are no public methods/functions for class '$self->{_current_javascript_namespace}'");
     }
 }
 
-sub _create_test_script {
-
-    my $self = shift;  
-    my ($module, $outdir) = @_;
-
-    my $scriptName = $self->_derive_script_name($module, $outdir);
-
-
-    if (-e $scriptName){
-
-        my $bakfile = $scriptName . '.bak';
-
-        copy ($scriptName, $bakfile) || $self->{_logger}->logconfess("Could not copy '$scriptName' to '$bakfile' : $!");
-    }
-
-    open (TOUTFILE, ">$scriptName") || $self->{_logger}->logconfess("Could not open file '$scriptName' in write mode : $!");
-
-
-    print TOUTFILE '#!/usr/bin/env perl' . "\n";
-
-    print TOUTFILE 'use strict;' . "\n";
-    print TOUTFILE 'use ' . $module . ';' . "\n\n";
-
-
-    print TOUTFILE "## method-created: " . File::Spec->rel2abs($0) . "\n";
-    print TOUTFILE "## date-created: " . localtime() . "\n";
-    print TOUTFILE "## created-by: " . getlogin . "\n";
-    print TOUTFILE "## input-umlet-file: " . File::Spec->rel2abs($self->getInfile()) . "\n";
-    print TOUTFILE "## output-directory: " . File::Spec->rel2abs($self->getOutdir()) . "\n\n";
-
-    print TOUTFILE 'my $var = new ' . $module . '();' ."\n";
-    print TOUTFILE 'if (!defined($var)){' . "\n";
-    print TOUTFILE '    die "Could not instantiate '. $module . "\";\n";
-    print TOUTFILE '}' . "\n\n";
-
-    print TOUTFILE 'print "$0 execution completed\n";' ."\n";
-    print TOUTFILE 'exit(0);' . "\n\n";
-
-    print TOUTFILE '##---------------------------------------------------' ."\n";
-    print TOUTFILE '##' . "\n";
-    print TOUTFILE '##  END OF MAIN -- SUBROUTINES FOLLOW' . "\n";
-    print TOUTFILE '##' . "\n";
-    print TOUTFILE '##---------------------------------------------------' ."\n";
-    
-    close TOUTFILE;
-
-    $self->{_logger}->info("Wrote '$scriptName'");
-
-    push(@{$self->{_test_script_file_list}}, $scriptName);
-}
-
-
-sub _add_factory_module_specific_methods {
+sub _derive_public_functions {
 
     my $self = shift;
-    
-    my ($namespace, $lookup) = @_;
+    my ($class_lookup) = @_;
 
-    $self->_add_factory_get_type_method($namespace, $lookup);
-    $self->_add_factory_create_method($namespace, $lookup);
-}
+    $self->{_public_functions_content} = '';
 
-sub _add_factory_get_type_method {
+    $self->_derive_getters_and_setters(@_);
 
-    my $self = shift;
-    
-    my ($namespace, $lookup) = @_;
+    if (( exists $class_lookup->{public_methods_list}) && 
+        ( defined $class_lookup->{public_methods_list})){
+        
+        my $content = '';
 
-    if (! $self->getSuppressCheckpoints()){
-        print OUTFILE '    confess "CHECKPOINT"; ## [RCS_TRIPWIRE] Remove this line '.
-            'of code after reviewing this method.' . "\n\n";
-    }
+        foreach my $record (@{$class_lookup->{public_methods_list}}){
 
-    print OUTFILE 'sub _getType {' . "\n\n";
-    print OUTFILE '    my $self = shift;' . "\n";
-    print OUTFILE '    my (%args) = @_;' . "\n\n";
-    print OUTFILE '    my $type = $self->getType();' . "\n\n";
-    print OUTFILE '    if (!defined($type)){' . "\n\n";
-    print OUTFILE '        if (( exists $args{system_type}) && ( defined $args{system_type})){' . "\n";
-    print OUTFILE '            $type = $args{system_type};' . "\n";
-    print OUTFILE '        }' . "\n";
-    print OUTFILE '        elsif (( exists $self->{_system_type}) && ( defined $self->{_system_type})){' . "\n";
-    print OUTFILE '            $type = $self->{_system_type};' . "\n";
-    print OUTFILE '        }' . "\n";
-    print OUTFILE '        else {' . "\n";
-    print OUTFILE '            $self->{_logger}->logconfess("type was not defined");' . "\n";
-    print OUTFILE '        }' . "\n\n";
-    print OUTFILE '        $self->setType($type);' . "\n";
-    print OUTFILE '    }' . "\n\n";
-    print OUTFILE '    return $type;' . "\n";
-    print OUTFILE '}' . "\n\n";
-
-    $self->{_logger}->info("Added _getType method for module '$namespace'");
-}
-
-   
-sub _add_factory_create_method {
-
-    my $self = shift;
-    
-    my ($namespace, $lookup) = @_;
-
-    print OUTFILE 'sub create {' . "\n\n";
-
-
-    if (! $self->getSuppressCheckpoints()){
-        print OUTFILE '    confess "CHECKPOINT"; ## [RCS_TRIPWIRE] Remove this '.
-            'line of code after reviewing this method.' . "\n\n";
-    }
-
-    print OUTFILE '    my $type  = $self->_getType(@_);' . "\n\n";
-    
-    my $typeCtr = 0;
-
-    foreach my $depmod (sort {$a <=> $b } keys %{$lookup->{factory_types_lookup}}){
-
-        $typeCtr++;
-
-        my $type = $lookup->{factory_types_lookup}->{$depmod};
-
-        my $lctype = lc($type);
-        my @parts = split('::', $depmod);
-        my $varname = lc(pop@parts);
-
-        if ($typeCtr == 1){
-            print OUTFILE '    if (lc($type) eq \'' . $lctype . "'){" . "\n\n";
-        }
-        else {
-            print OUTFILE '    elsif (lc($type) eq \'' . $lctype . "'){" . "\n\n";
+            $content .= 'const ' . $record->getName() . ' = function (){' . "\n".
+            '};' . "\n\n";
         }
 
-        print OUTFILE '        my $' . $varname . ' = new ' . $depmod . '(@_);' . "\n";
-        print OUTFILE '        if (!defined($' . $varname . ')){' . "\n";
-        print OUTFILE '            confess "Could not instantiate ' . $depmod . "\";\n";
-        print OUTFILE '        }' . "\n\n";
-        print OUTFILE '        return $' . $varname . ';' . "\n";
-        print OUTFILE '    }' . "\n";
+        $self->{_public_functions_content} .= $content;
     }
-    
-    print OUTFILE '    else {' . "\n";
-    print OUTFILE '        confess "type \'$type\' is not currently supported";' . "\n";
-    print OUTFILE '    }' . "\n";
-    print OUTFILE '}' . "\n\n";
-    
-    if ($self->getVerbose()){
-        print "Wrote create method for module '$namespace'\n";
+    else {
+        $self->{_logger}->info("Looks like there are no public methods/functions for class '$self->{_current_javascript_namespace}'");
     }
-    
-    $self->{_logger}->info("Wrote create method for module '$namespace'");
 }
 
-sub _get_app_method_content {
+
+sub _derive_return_function_list {
 
     my $self = shift;
-    my ($method_name, $url, $desc, $route_parameters_list, $body_parameters_list) = @_;
-    
-    my $template_file = $self->getAppMethodTemplateFile();
-    if (!defined($template_file)){
-        $self->{_logger}->logconfess("template_file was not defined");
+    my ($class_lookup) = @_;
+
+    if (( exists $class_lookup->{public_methods_list}) && 
+        ( defined $class_lookup->{public_methods_list})){
+        
+
+        my $list = [];
+
+        foreach my $record (@{$class_lookup->{public_methods_list}}){
+
+            my $name = $record->getName();
+
+            my $val = $name . " : " . $name;
+            
+            push(@{$list}, $val);
+        }
+
+        my $content = join(",\n", @{$list});
+
+        $self->{_logger}->info("return_function_list_content '$content'");
+
+        $self->{_return_function_list_content} = $content;
     }
-
-    my $route_parameters_list_content = $self->_get_route_parameters_list_content($route_parameters_list);
-
-    my $body_parameters_list_content = $self->_get_body_parameters_list_content($body_parameters_list);
-
-    my $argument_list_content = $self->_get_argument_list_content($route_parameters_list, $body_parameters_list);
-
-    my $lookup = {
-        url => $url,
-        desc => $desc,
-        method_name => $method_name,
-        route_parameters_list_content => $route_parameters_list_content,
-        body_parameters_list_content => $body_parameters_list_content,
-        argument_list_content => $argument_list_content
-    };
-
-    my $content = $self->_generate_content_from_template($template_file, $lookup);
-
-    push(@{$self->{_app_method_content_list}}, $content);
+    else {
+        $self->{_logger}->info("Looks like there are no public methods/functions for class '$self->{_current_javascript_namespace}'");
+    }
 }
 
-sub _generate_content_from_template {
+sub _write_file {
 
     my $self = shift;
-    my ($template_file, $lookup) = @_;
+    my ($template_file) = @_;
+
+
+    my $outfile = $self->_get_outfile($self->{_current_namespace});
+
 
     my $tt = new Template({ABSOLUTE => 1});
     if (!defined($tt)){
         $self->{_logger}->logconfess("Could not instantiate TT");
     }
 
-    my $tmp_outfile = $self->getOutdir() . '/out.pm';
 
-    $tt->process($template_file, $lookup, $tmp_outfile) || $self->{_logger}->logconfess("Encountered the following Template::process error:" . $tt->error());
-    
-    $self->{_logger}->info("Wrote temporary output file '$tmp_outfile'");
+    my $lookup = {
+        instance_variable_name              => $self->{_instance_variable_name},
+        namespace_declaration_content       => $self->{_namespace_declaration_content},
+        namespace                           => $self->{_current_javascript_namespace},
+        constants_content                   => $self->{_constants_content},
+        dependencies_variables_content      => $self->{_dependencies_variables_content},
+        dependencies_instantiations_content => $self->{_dependencies_instantiations_content},
+        private_funtions_content            => $self->{_private_functions_content},
+        public_functions_content            => $self->{_public_functions_content},
+        return_function_list_content        => $self->{_return_function_list_content},
+        private_data_members_content        => $self->{_private_data_members_content}
+    };
 
-    my @lines = read_file($tmp_outfile);
+    $self->{_logger}->fatal(Dumper $lookup);
 
-    my $content = join("", @lines);
-
-    unlink($tmp_outfile) || $self->{_logger}->logconfess("Could not unlink temporary output file '$tmp_outfile' : $!");
-
-    $self->{_logger}->info("temporary output file '$tmp_outfile' was removed");
-
-    return $content;
-}
-
-sub _write_file {
-
-    my $self = shift;
-    my ($namespace) = @_;
-
-    my $outfile = $self->_get_outfile($namespace);
+    $tt->process($template_file, $lookup, $outfile) || $self->{_logger}->logconfess("Encountered the following Template::process error:" . $tt->error());
 
 
     if ($self->getVerbose()){
-        print "Wrote module file '$outfile'\n";
+        print "Wrote JavaScript class file '$outfile'\n";
     }
 
-    $self->{_logger}->info("Wrote module file '$outfile'");
+    $self->{_logger}->info("Wrote JavaScript class file '$outfile'");
 
     push(@{$self->{_module_file_list}}, $outfile);
 }
@@ -972,9 +551,11 @@ sub _get_outfile {
     my $self = shift;
     my ($namespace) = @_;
 
-    my $outfile = $self->getOutdir() . '/javascript/model/' . $namespace . '.js';
+    my $outdir = $self->getOutdir() . '/javascript/model/';
 
-    $outfile =~ s|\:\:|/|g;
+    my $outfile = $outdir . $namespace;
+
+    $outfile =~ s|\.|/|g;
 
     my $dirname = File::Basename::dirname($outfile);
 
@@ -985,8 +566,25 @@ sub _get_outfile {
         $self->{_logger}->info("Created output directory '$dirname'");
     }
 
+
+    $outfile .= '.js';
+
     return $outfile;
 }
+
+
+sub _print_summary {
+
+    my $self = shift;
+    
+    if ($self->getVerbose()){
+
+        print "\nCreated the following JavaScript files:\n";
+        
+        print join("\n", @{$self->{_module_file_list}}) . "\n";
+    }
+}
+
 
 no Moose;
 __PACKAGE__->meta->make_immutable;

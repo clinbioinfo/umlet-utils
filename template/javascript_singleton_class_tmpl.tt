@@ -1,99 +1,38 @@
 let [% instance_variable_name %];
 
-[% namespace_declaration %]
-// var MedImmune = MedImmune || {};
-// MedImmune.BDM = MedImmune.BDM || {};
-// MedImmune.BDM.CreateCollection = MedImmune.BDM.CreateCollection || {};
-// MedImmune.BDM.CreateCollection.Webapp = MedImmune.BDM.CreateCollection.Webapp || {};
+[% namespace_declaration_content %]
 
-/*
-  Object definition using the JavaScript Module Design Pattern 
-*/
+/* Object definition using the JavaScript Module Design Pattern  */
 
 [% namespace %] = (function(){
 
     var create = function(){
 
-        [% dependencies_variables %]
-        // var appUtil;
-        // var appViewController;
-        // var appInitializer;
-        // var lightbox;
-        // var server;
-        // var loginManager;
+        /* constants */
+        [% constants_content %]
+
+        /* private data members */
+        [% private_data_members_content %]
+
+        /* private data members that reference other JavaScript classes that are depended on by this class */
+        [% dependencies_variables_content %]
 
         const _init = function (){
         
-            [% dependencies_instantiations %]
-
-         //    lightbox = MedImmune.BDM.Lightbox.getInstance();
-
-    	    // appUtil = MedImmune.BDM.App.Util.getInstance();
-         //    if (!defined(appUtil)){
-         //        throw new Error("Could not instantiate MedImmune.BDM.App.Util");
-         //    }
-
-         //    server = MedImmune.BDM.CreateCollection.Server.getInstance();
-         //    if (!defined(server)){
-         //        throw new Error("Could not instantiate MedImmune.BDM.CreateCollection.Server");
-         //    }
-
-    	    // appInitializer = MedImmune.BDM.CreateCollection.WebApp.Initializer.getInstance();
-         //    if (!defined(appInitializer)){
-         //        throw new Error("Could not instantiate MedImmune.BDM.CreateCollection.WebApp.Initializer");
-         //    }
-
-    	    // appViewController = MedImmune.BDM.CreateCollection.WebApp.View.Controller.getInstance();
-         //    if (!defined(appViewController)){
-         //        throw new Error("Could not instantiate MedImmune.BDM.CreateCollection.WebApp.View.Controller");
-         //    }            
-
-    	    // loginManager = MedImmune.BDM.LoginManager.getInstance();
-         //    if (!defined(loginManager)){
-         //        throw new Error("Could not instantiate MedImmune.BDM.LoginManager");
-         //    }            
+            /* instantiation of JavaScript classes that are used by this class */
+            [% dependencies_instantiations_content %]
 
         };
 
-        [% private_functions %]
-        // var run = function (){
+        /* definitions of all private methods/functions */
+        [% private_functions_content %]
 
-    	   //  _init();
-
-        //     loginManager.displayUI();
-        // }
+        /* definitions of all public methods/functions */
+        [% public_functions_content %]
 
 
-        // var run2 = function (){
-            
-        //     /* 
-        //        The user has been successfully logged in.
-        //        Go ahead and initialize the UI.
-        //     */
-
-        //     try {
-        //         appInitializer.initialize();
-        //     }
-        //     catch (ex){
-        //         throw new Error("Caught some exception: '" + ex.message + "' at line number '" + ex.lineNumber + 
-        //                         "' in file '" + ex.fileName + "'.  Please contact the administrator '__ADMIN_EMAIL_ADDRESS__'.");
-        //     }
-
-        //     try {
-                
-	       //  //appViewController.displayPlanDashboard();
-        //     }
-        //     catch (ex){
-        //         throw new Error("Caught some exception: '" + ex.message + "' at line number '" + ex.lineNumber +
-        //                         "' in file '" + ex.fileName + "'.  Please contact the administrator '__ADMIN_EMAIL_ADDRESS__'.");
-        //     }
-        // }
-
-
-         return {
-            [% return_function_list %]
-             // run: run,
-             // run2: run2
+        return {
+            [% return_function_list_content %]
         };
     };
     

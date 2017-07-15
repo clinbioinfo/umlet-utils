@@ -1,30 +1,31 @@
-package Umlet::ClassDiagram::JavaScript::API::Converter;
-
-## Converts Umlet Class Diagram into set of JavaScript class files.
+package Umlet::ClassDiagram::Perl::API::Converter;
 
 use Moose;
-use Cwd;
-use Term::ANSIColor;
 
 use Umlet::Config::Manager;
-use Umlet::JavaScript::ClassDiagram::File::XML::Parser;
-use Umlet::JavaScript::Class::File::Writer;
+use Umlet::Perl::ClassDiagram::File::XML::Parser;
+use Umlet::Perl::Module::File::Writer;
 
 extends 'Umlet::Converter';
+
+use constant TRUE  => 1;
+
+use constant FALSE => 0;
 
 
 ## Singleton support
 my $instance;
 
+
 sub getInstance {
 
     if (!defined($instance)){
 
-        $instance = new Umlet::ClassDiagram::JavaScript::API::Converter(@_);
+        $instance = new Umlet::ClassDiagram::Perl::API::Converter(@_);
 
         if (!defined($instance)){
 
-            confess "Could not instantiate Umlet::ClassDiagram::JavaScript::API::Converter";
+            confess "Could not instantiate Umlet::ClassDiagram::Perl::API::Converter";
         }
     }
     return $instance;
@@ -45,13 +46,16 @@ sub BUILD {
     $self->{_logger}->info("Instantiated ". __PACKAGE__);
 }
 
+
 sub _initUmletFileParser {
 
     my $self = shift;
 
-    my $parser = Umlet::JavaScript::ClassDiagram::File::XML::Parser::getInstance(@_);
+    ## Module for parsing a Class Digram in UMLet where the classes represent Perl modules
+
+    my $parser = Umlet::Perl::ClassDiagram::File::XML::Parser::getInstance(@_);
     if (!defined($parser)){
-        $self->{_logger}->logconfess("Could not instantiate Umlet::JavaScript::ClassDiagram::File::XML::Parser");
+        $self->{_logger}->logconfess("Could not instantiate Umlet::Perl::ClassDiagram::File::XML::Parser");
     }
 
     $self->{_parser} = $parser;
@@ -61,14 +65,13 @@ sub _initAPIWriter {
 
     my $self = shift;
 
-    my $writer = new Umlet::JavaScript::Class::File::Writer(@_);
+    my $writer = new Umlet::Perl::Module::File::Writer(@_);
     if (!defined($writer)){
-        $self->{_logger}->logconfess("Could not instantiate Umlet::JavaScript::Class::File::Writer");
+        $self->{_logger}->logconfess("Could not instantiate Umlet::Perl::Module::File::Writer");
     }
 
     $self->{_writer} = $writer;
 }
-
 
 sub runConversion {
 
@@ -86,7 +89,11 @@ sub runConversion {
             $self->{_logger}->logconfess("module_lookup was not defined");
         }
 
+        # &parseUxfFile($infile);
+
         $self->{_writer}->createAPI($module_lookup);
+
+        # &createAPI();
 
         if ($self->getVerbose()){
 
@@ -110,7 +117,7 @@ __END__
 
 =head1 NAME
 
- Umlet::ClassDiagram::JavaScript::API::Converter
+ Umlet::ClassDiagram::Perl::API::Converter
  
 
 =head1 VERSION
@@ -119,8 +126,8 @@ __END__
 
 =head1 SYNOPSIS
 
- use Umlet::ClassDiagram::JavaScript::API::Converter;
- my $converter = Umlet::ClassDiagram::JavaScript::API::Converter::getInstance();
+ use Umlet::ClassDiagram::Perl::API::Converter;
+ my $converter = Umlet::ClassDiagram::Perl::API::Converter::getInstance();
  $converter->runConversion();
 
 =head1 AUTHOR
