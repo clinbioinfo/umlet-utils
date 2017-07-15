@@ -402,6 +402,36 @@ sub _derive_private_functions {
     }
 }
             
+
+sub _get_camel_case_function_name {
+
+    my $self = shift;
+    my ($function_name) = @_;
+
+    my @parts = split(/_/, $function_name);
+
+    my $final_function_name = '';
+
+    my $ctr = 0;
+
+    foreach my $part (@parts){
+
+        $ctr++;
+
+        if ($ctr == 1){
+
+            $final_function_name .= $part;
+        }
+        else {
+
+            $final_function_name .= ucfirst($part);
+        }
+    }
+
+    return $final_function_name;
+}
+
+
 sub _derive_getters_and_setters {
 
     my $self = shift;
@@ -417,6 +447,11 @@ sub _derive_getters_and_setters {
             my $name = $record->getName();
 
             my $function_name = ucfirst(lc($name));
+
+            if ($function_name =~ m|_|){
+
+                $function_name = $self->_get_camel_case_function_name($function_name);
+            }
 
             $content .= '    const get' . $function_name . ' = function (){' . "\n";
             $content .= '        return ' . $name . ';' . "\n";
