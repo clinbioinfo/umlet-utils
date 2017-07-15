@@ -3,7 +3,6 @@ package Umlet::JavaScript::Class::File::Writer;
 use Moose;
 use Cwd;
 use String::CamelCase qw(decamelize);
-use Data::Dumper;
 use File::Path;
 use FindBin;
 use Term::ANSIColor;
@@ -73,10 +72,6 @@ sub _create_api {
     my $self = shift;
     my ($master_lookup) = @_;
 
-    # $self->{_class_lookup} = $master_lookup;
-
-    # print Dumper $master_lookup;die;
-
     my $outdir = $self->getOutdir();
 
     if ($self->getVerbose()){
@@ -103,15 +98,12 @@ sub _create_api {
             }
         }
 
-        $self->{_current_class_is_singleton} = TRUE;
 
         $self->{_current_namespace} = $namespace;
 
         $self->{_current_javascript_namespace} = $self->_derive_javascript_namespace();
 
         $self->{_current_class_lookup} = $master_lookup->{$namespace};
-
-        # $self->{_logger}->fatal(Dumper $self->{_current_class_lookup});
 
         $self->_derive_class_details();
 
@@ -121,20 +113,18 @@ sub _create_api {
 
         $self->_derive_dependencies_variables($master_lookup->{$namespace});
 
-        # $self->_derive_dependencies_instantiations();
-
         $self->_derive_functions($master_lookup->{$namespace});
 
         $self->_derive_return_function_list($master_lookup->{$namespace});
   
         my $template_file = $self->getClassTemplateFile();
 
-        if ($self->{_current_class_is_singleton}){
+        if ((exists $master_lookup->{$namespace}->{singleton}) && ($master_lookup->{$namespace}->{singleton} == TRUE)){
 
             $template_file = $self->getSingletonClassTemplateFile();
         }
         else {
-            $template_file = $self->getSingletonClassTemplateFile();
+            $template_file = $self->getClassTemplateFile();
         }
 
         $self->_write_file($template_file);
@@ -532,7 +522,6 @@ sub _write_file {
         private_data_members_content        => $self->{_private_data_members_content}
     };
 
-    $self->{_logger}->fatal(Dumper $lookup);
 
     $tt->process($template_file, $lookup, $outfile) || $self->{_logger}->logconfess("Encountered the following Template::process error:" . $tt->error());
 

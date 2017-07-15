@@ -362,13 +362,13 @@ sub _process_comment_line {
 
         $self->{_module_lookup}->{$self->{_current_class}}->{already_implemented} = TRUE;
     }
-    elsif ($line =~ m|^//singleton|){
+    elsif ($line =~ m|^//singleton|i){
 
         if ($self->getVerbose()){
             print "currentModule '$self->{_current_class}' is a singleton\n";
         }
 
-        $self->{_module_lookup}->{$self->{_current_class}}->{singleton}++;
+        $self->{_module_lookup}->{$self->{_current_class}}->{singleton} = TRUE;
     }
     elsif (($line =~ m|^//extends (\S+)|) || ($line =~ m|^//inherits (\S+)|)){
 
