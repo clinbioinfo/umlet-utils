@@ -1,4 +1,4 @@
-package Umlet::PerlAPIToSequenceDiagram::Converter;
+package Umlet::Perl::API::SequenceDiagram::Converter;
 
 use Moose;
 use Cwd;
@@ -84,11 +84,11 @@ sub getInstance {
 
     if (!defined($instance)){
 
-        $instance = new Umlet::PerlAPIToSequenceDiagram::Converter(@_);
+        $instance = new Umlet::Perl::API::SequenceDiagram::Converter(@_);
 
         if (!defined($instance)){
 
-            confess "Could not instantiate Umlet::PerlAPIToSequenceDiagram::Converter";
+            confess "Could not instantiate Umlet::Perl::API::SequenceDiagram::Converter";
         }
     }
     return $instance;
@@ -288,7 +288,7 @@ __END__
 
 =head1 NAME
 
- Umlet::PerlAPIToSequenceDiagram::Converter
+ Umlet::Perl::API::SequenceDiagram::Converter
  
 
 =head1 VERSION
@@ -297,8 +297,8 @@ __END__
 
 =head1 SYNOPSIS
 
- use Umlet::PerlAPIToSequenceDiagram::Converter;
- my $converter = Umlet::PerlAPIToSequenceDiagram::Converter::getInstance();
+ use Umlet::Perl::API::SequenceDiagram::Converter;
+ my $converter = Umlet::Perl::API::SequenceDiagram::Converter::getInstance();
  $converter->runConversion();
 
 =head1 AUTHOR

@@ -1,4 +1,4 @@
-package Umlet::PerlAPIToClassDiagram::Converter;
+package Umlet::Perl::API::ClassDiagram::Converter;
 
 use Moose;
 use Cwd;
@@ -84,11 +84,11 @@ sub getInstance {
 
     if (!defined($instance)){
 
-        $instance = new Umlet::PerlAPIToClassDiagram::Converter(@_);
+        $instance = new Umlet::Perl::API::ClassDiagram::Converter(@_);
 
         if (!defined($instance)){
 
-            confess "Could not instantiate Umlet::PerlAPIToClassDiagram::Converter";
+            confess "Could not instantiate Umlet::Perl::API::ClassDiagram::Converter";
         }
     }
     return $instance;
@@ -294,7 +294,7 @@ __END__
 
 =head1 NAME
 
- Umlet::PerlAPIToClassDiagram::Converter
+ Umlet::Perl::API::ClassDiagram::Converter
  
 
 =head1 VERSION
@@ -303,8 +303,8 @@ __END__
 
 =head1 SYNOPSIS
 
- use Umlet::PerlAPIToClassDiagram::Converter;
- my $converter = Umlet::PerlAPIToClassDiagram::Converter::getInstance();
+ use Umlet::Perl::API::ClassDiagram::Converter;
+ my $converter = Umlet::Perl::API::ClassDiagram::Converter::getInstance();
  $converter->runConversion();
 
 =head1 AUTHOR
