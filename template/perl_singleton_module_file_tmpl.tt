@@ -6,6 +6,10 @@ use Moose;
 use [% use_module %];
 [% END %]
 
+[% FOREACH depends_on_module IN depends_on_module_list %]
+use [% depends_on_module %];
+[% END %]
+
 [% FOREACH extends_module IN extends_module_list %]
 extends '[% use_module %]';
 [% END %]

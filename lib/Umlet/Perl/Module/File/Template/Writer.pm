@@ -162,6 +162,8 @@ sub _create_api {
             $template_file = $self->getSingletonModuleTemplateFile();
         }     
        
+        $self->_derive_use_list($module_lookup);
+        
         $self->_add_dependencies($module_lookup);
         
         $self->_add_extends($module_lookup);
@@ -184,6 +186,7 @@ sub _create_api {
             copyright           => $self->getCopyright(),
             package_name        => $self->{_current_module_name},
             use_module_list     => $self->{_current_module_details}->{use_module_list},
+            depends_on_module_list     => $self->{_current_module_details}->{depends_on_module_list},
             extends_module_list => $self->{_current_module_details}->{extends_module_list},
             constants_list      => $self->{_current_module_details}->{constants_list},
             private_data_member_definition_list => $self->{_current_module_details}->{private_data_member_definition_list},
@@ -292,7 +295,7 @@ sub _add_dependencies {
             $ctr++;
         }
 
-        $self->{_current_module_details}->{use_module_list} = $list;
+        $self->{_current_module_details}->{depends_on_module_list} = $list;
 
         if ($self->getVerbose()){
             print "Added '$ctr' dependencies\n";
@@ -302,6 +305,38 @@ sub _add_dependencies {
     }
     else {
         $self->{_logger}->info("Looks like there are not dependencies for module '$self->{_current_module_name}'");
+    }
+}
+
+sub _derive_use_list {
+
+    my $self = shift;
+
+    my ($module_lookup) = @_;
+
+    if (( exists $module_lookup->{uses_list}) && 
+        ( defined $module_lookup->{uses_list})){
+
+        my $ctr = 0;
+        my $list = [];
+
+        foreach my $uses (@{$module_lookup->{uses_list}}){
+            
+            push(@{$list}, $uses);
+
+            $ctr++;
+        }
+
+        $self->{_current_module_details}->{use_module_list} = $list;
+
+        if ($self->getVerbose()){
+            print "Added '$ctr' use module statements\n";
+        }
+
+        $self->{_logger}->info("Added '$ctr' use module statements for module '$self->{_current_module_name}'");
+    }
+    else {
+        $self->{_logger}->info("Looks like there are no use module statements for module '$self->{_current_module_name}'");
     }
 }
 

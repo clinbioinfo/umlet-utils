@@ -190,6 +190,10 @@ sub panelAttributesHandler {
 
                         push(@{$self->{_module_lookup}->{$currentModule}->{extends_list}}, $1);
                     }
+                    elsif ($line =~ m|^//use (\S+)|){
+
+                        push(@{$self->{_module_lookup}->{$currentModule}->{uses_list}}, $1);                        
+                    }
                     elsif ( (($line =~ m|^//depends on (\S+) type\=(\S+)|) || ($line =~ m|^//depends (\S+) type\=(\S+)|)) && ($processingFactoryModule)){
 
                         push(@{$self->{_module_lookup}->{$currentModule}->{depends_on_list}}, $1);
