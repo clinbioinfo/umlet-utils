@@ -7,5 +7,5 @@ sub _init[% init_method_name %]{
 		$self->{_logger}->logconfess("Could not instantiate [% dependency %]");
 	}
 
-	$self->{_[% variable_name %]} = $variable_name;
+	$self->{_[% variable_name %]} = $[% variable_name %];
 }
