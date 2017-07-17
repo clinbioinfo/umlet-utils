@@ -1,0 +1,21 @@
+sub [% method_name %]{
+	
+	my $self = shift;
+	[% IF has_parameter_list %]
+	my ([% parameter_name_list_content %]) = @_;
+
+	[%FOREACH parameter_name IN parameter_name_list %]
+	if (!defined($[% parameter_name %])){
+		$self->{_logger}->logconfess("[% parameter_name %] was not defined");
+	}
+	[% END %]
+	
+	[% END %]
+
+	$self->{_logger}->logconfess("NOT YET IMPLEMENTED");
+	
+	[% IF has_return_datatype %]
+	my $return_value;
+	return $return_value; ## This should be of data type [% return_datatype %]
+	[% END %]
+}

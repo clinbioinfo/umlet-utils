@@ -1,0 +1,8 @@
+has '[% attribute_name %]' => (
+    is       => '[% access_type %]',
+    isa      => '[% data_type %]',
+    writer   => 'set[% method_name %]',
+    reader   => 'get[% method_name %]',
+    required => [% IF is_required %]TRUE[% ELSE %]FALSE[% END %],
+    default  => [% default %]
+);

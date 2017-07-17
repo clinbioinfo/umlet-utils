@@ -4,7 +4,7 @@ use Moose;
 
 use Umlet::Config::Manager;
 use Umlet::Perl::ClassDiagram::File::XML::Parser;
-use Umlet::Perl::Module::File::Writer;
+use Umlet::Perl::Module::File::Template::Writer;
 
 extends 'Umlet::Converter';
 
@@ -65,9 +65,9 @@ sub _initAPIWriter {
 
     my $self = shift;
 
-    my $writer = new Umlet::Perl::Module::File::Writer(@_);
+    my $writer = new Umlet::Perl::Module::File::Template::Writer(@_);
     if (!defined($writer)){
-        $self->{_logger}->logconfess("Could not instantiate Umlet::Perl::Module::File::Writer");
+        $self->{_logger}->logconfess("Could not instantiate Umlet::Perl::Module::File::Template::Writer");
     }
 
     $self->{_writer} = $writer;

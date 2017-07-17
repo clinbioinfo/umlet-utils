@@ -25,6 +25,8 @@ use constant DEFAULT_OUTDIR => '/tmp/' . DEFAULT_USERNAME . '/' . File::Basename
 
 use constant DEFAULT_INDIR => File::Spec->rel2abs(cwd());
 
+use constant DEFAULT_COPYRIGHT => 'N/A';
+
 ## Singleton support
 my $instance;
 
@@ -109,6 +111,15 @@ has 'author_email_address' => (
     writer   => 'setAuthorEmailAddress',
     reader   => 'getAuthorEmailAddress',
     required => FALSE
+    );
+
+has 'copyright' => (
+    is       => 'rw',
+    isa      => 'Str',
+    writer   => 'setCopyright',
+    reader   => 'getCopyright',
+    required => FALSE,
+    default  => DEFAULT_COPYRIGHT
     );
 
 

@@ -1,0 +1,126 @@
+package [% package_name %];
+
+use Moose;
+
+[% FOREACH use_module IN use_module_list %]
+use [% use_module %];
+[% END %]
+
+[% FOREACH extends_module IN extends_module_list %]
+extends '[% use_module %]';
+[% END %]
+
+use constant TRUE  => 1;
+use constant FALSE => 0;
+
+[% FOREACH constant IN constants_list %]
+use constant [% constant.0 %] => [% constant.1 %];
+[% END %]
+
+[% FOREACH private_data_member_definition IN private_data_member_definition_list %]
+[% private_data_member_definition %]
+[% END %]
+
+
+[% IF is_singleton %]
+## Singleton support
+my $instance;
+
+sub getInstance {
+
+    if (!defined($instance)){
+
+        $instance = new [% package_name %](@_);
+
+        if (!defined($instance)){
+
+            confess "Could not instantiate [% package_name %]";
+        }
+    }
+    return $instance;
+}
+[% END %]
+
+sub BUILD {
+
+    my $self = shift;
+
+    $self->_initLogger(@_);
+
+    $self->_initConfigManager(@_);
+
+    [% FOREACH init_method_statement IN init_method_statement_list %]
+
+    $self->_init[% init_method_statement %](@_);
+
+    [% END %]
+
+    $self->{_logger}->info("Instantiated ". __PACKAGE__);
+}
+
+sub _initLogger {
+
+    my $self = shift;
+
+    my $logger = Log::Log4perl->get_logger(__PACKAGE__);
+
+    if (!defined($logger)){
+        confess "logger was not defined";
+    }
+
+    $self->{_logger} = $logger;
+}
+
+sub _initConfigManager {
+
+    my $self = shift;
+
+    my $manager = Umlet::Config::Manager::getInstance(@_);
+    if (!defined($manager)){
+        $self->{_logger}->logconfess("Could not instantiate Umlet::Config::Manager");
+    }
+
+    $self->{_config_manager} = $manager;
+}
+
+[% FOREACH init_method_definition IN init_method_definition_list %]
+[% init_method_definition %]
+[% END %]
+
+
+[% FOREACH method_definition IN method_definition_list %]
+[% method_definition %]
+[% END %]
+
+no Moose;
+__PACKAGE__->meta->make_immutable;
+
+__END__
+
+
+=head1 NAME
+
+ [% package_name %]
+ 
+
+=head1 VERSION
+
+ [% software_version %]
+
+=head1 SYNOPSIS
+
+ use [% package_name %];
+ my $instance = [% package_name %]::getInstance();
+ $intance->doSomething();
+
+=head1 AUTHOR
+
+ [% author %]
+
+ [% copyright %]
+
+=head1 METHODS
+
+=over 4
+
+=cut

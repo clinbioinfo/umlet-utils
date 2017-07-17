@@ -1,0 +1,11 @@
+sub _init[% init_method_name %]{
+	
+	my $self = shift;
+
+	my $[% variable_name %] = [% dependency %]::getInstance(@_);
+	if (!defined($[% variable_name %])){
+		$self->{_logger}->logconfess("Could not instantiate [% dependency %]");
+	}
+
+	$self->{_[% variable_name %]} = $variable_name;
+}
