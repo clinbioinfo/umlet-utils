@@ -12,7 +12,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 
 use Umlet::Logger;
-use Umlet::Converter;
+use Umlet::ClassDiagram::Perl::API::Converter;
 
 use constant TRUE => 1;
 
@@ -82,7 +82,7 @@ if (!defined($logger)){
     die "Could not instantiate Umlet::Logger";
 }
 
-my $converter = Umlet::Converter::getInstance(
+my $converter = Umlet::ClassDiagram::Perl::API::Converter::getInstance(
     config_file          => $config_file,
     infile               => $infile,
     outdir               => $outdir,
@@ -95,7 +95,7 @@ my $converter = Umlet::Converter::getInstance(
     );
 
 if (!defined($converter)){
-    $logger->logdie("Could not instantiate Umlet::Converter");
+    $logger->logdie("Could not instantiate Umlet::ClassDiagram::Perl::API::Converter");
 }
     
 $converter->run();
