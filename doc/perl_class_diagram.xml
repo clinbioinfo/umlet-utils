@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>20</x>
+      <y>20</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>Stark::Industries::ArcReactor::DBUtil
+//use DBI
+//use Carp
+//depends on Stark::Industries::ArcReactor::PasswordManager
+//depends on Stark::Industries::ArcReactor::Report::Generator
+//singleton
+//constant default_username = 'sundaramj'
+//constant default_port = 1523
+--
+-database:string
+-server:string
+-username:string
+-password:string
+-port_number:int
+--
++connect(username, password, server, database, port_number)
++getTableCounts(table_name, username): int
+-privateMethod1()
+-privateMethod2()</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>
