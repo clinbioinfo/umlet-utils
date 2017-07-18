@@ -1,12 +1,11 @@
 package Umlet::JavaScript::Class::File::Writer;
 
 use Moose;
-use Cwd;
-use String::CamelCase qw(decamelize);
+# use String::CamelCase qw(decamelize);
 use File::Path;
 use FindBin;
-use Term::ANSIColor;
 use Template;
+use File::Slurp;
 
 use Umlet::Config::Manager;
 
@@ -16,29 +15,53 @@ use constant TRUE  => 1;
 
 use constant FALSE => 0;
 
-use constant DEFAULT_JAVASCRIPT_SINGLETON_CLASS_FILE => "$FindBin::Bin/../template/javascript_singleton_class_tmpl.tt";
+use constant DEFAULT_SETTER_TEMPLATE_FILE => "$FindBin::Bin/../template/javascript_setter_method_tmpl.tt";
 
-use constant DEFAULT_JAVASCRIPT_CLASS_FILE => "$FindBin::Bin/../template/javascript_class_tmpl.tt";
+use constant DEFAULT_GETTER_TEMPLATE_FILE => "$FindBin::Bin/../template/javascript_getter_method_tmpl.tt";
 
 ## Singleton support
 my $instance;
 
-has 'singleton_class_template_file' => (
+has 'class_lookup' => (
     is       => 'rw',
-    isa      => 'Str',
-    writer   => 'setSingletonClassTemplateFile',
-    reader   => 'getSingletonClassTemplateFile',
-    required => FALSE,
-    default  => DEFAULT_JAVASCRIPT_SINGLETON_CLASS_FILE
+    isa      => 'HashRef',
+    writer   => 'setClassLookup',
+    reader   => 'getClassLookup',
+    required => TRUE
     );
 
-has 'class_template_file' => (
+has 'namespace' => (
     is       => 'rw',
     isa      => 'Str',
-    writer   => 'setClassTemplateFile',
-    reader   => 'getClassTemplateFile',
+    writer   => 'setNamespace',
+    reader   => 'getNamespace',
+    required => TRUE
+    );
+
+has 'javascript_namespace' => (
+    is       => 'rw',
+    isa      => 'Str',
+    writer   => 'setJavaScriptNamespace',
+    reader   => 'getJavaScriptNamespace',
+    required => TRUE
+    );
+
+has 'getter_method_template_file' => (
+    is       => 'rw',
+    isa      => 'Str',
+    writer   => 'setGetterTemplateFile',
+    reader   => 'getGetterTemplateFile',
     required => FALSE,
-    default  => DEFAULT_JAVASCRIPT_CLASS_FILE
+    default  => DEFAULT_GETTER_TEMPLATE_FILE
+    );
+
+has 'setter_method_template_file' => (
+    is       => 'rw',
+    isa      => 'Str',
+    writer   => 'setSetterTemplateFile',
+    reader   => 'getSetterTemplateFile',
+    required => FALSE,
+    default  => DEFAULT_SETTER_TEMPLATE_FILE
     );
 
 sub getInstance {
@@ -67,95 +90,39 @@ sub BUILD {
     $self->{_logger}->info("Instantiated ". __PACKAGE__);
 }
 
-sub _create_api {
-
-    my $self = shift;
-    my ($master_lookup) = @_;
-
-    my $outdir = $self->getOutdir();
-
-    if ($self->getVerbose()){
-        print "About to create the API in directory '$outdir'\n";
-    }
-
-    $self->{_logger}->info("About to create the JavaScript API in directory '$outdir'");
-
-    foreach my $namespace (sort keys %{$master_lookup}){
-
-        print "Processing JavaScript class '$namespace'\n";
-
-        $self->{_logger}->info("Processing JavaScript class '$namespace'");        
-
-
-        if ((exists $master_lookup->{$namespace}->{already_implemented}) && 
-            ($master_lookup->{$namespace}->{already_implemented} ==  TRUE)){
-
-            if ($self->getSkipGreenModules()){
-
-                $self->{_logger}->info("Will skip creation of module '$namespace' since UXF indicates the module has already been implemented");
-                
-                next;
-            }
-        }
-
-
-        $self->{_current_namespace} = $namespace;
-
-        $self->{_current_javascript_namespace} = $self->_derive_javascript_namespace();
-
-        $self->{_current_class_lookup} = $master_lookup->{$namespace};
-
-        $self->_derive_class_details();
-
-        $self->_derive_constants($master_lookup->{$namespace});
-
-        $self->_derive_private_data_members($master_lookup->{$namespace});
-
-        $self->_derive_dependencies_variables($master_lookup->{$namespace});
-
-        $self->_derive_functions($master_lookup->{$namespace});
-
-        $self->_derive_return_function_list($master_lookup->{$namespace});
-  
-        my $template_file = $self->getClassTemplateFile();
-
-        if ((exists $master_lookup->{$namespace}->{singleton}) && ($master_lookup->{$namespace}->{singleton} == TRUE)){
-
-            $template_file = $self->getSingletonClassTemplateFile();
-        }
-        else {
-            $template_file = $self->getClassTemplateFile();
-        }
-
-        $self->_write_file($template_file);
-    }
-
-    if ($self->getVerbose()){
-        print "Have created the API in the directory '$outdir'\n";
-    }
-
-    $self->{_logger}->info("Have created the API in the directory '$outdir'");
-}
-
-
-sub _derive_javascript_namespace {
+sub writeFile {
 
     my $self = shift;
 
-    my $namespace = $self->{_current_namespace};
+    my $namespace = $self->getNamespace();
+    if (!defined($namespace)){
+        $self->{_logger}->logconfess("namespace was not defined");
+    }    
 
-    if ($namespace =~ m|::|){
-
-        my $original = $namespace;
-        
-        $namespace =~ s|::|\.|g;
-        
-        $self->{_logger}->info("Changed the namespace from '$original' to '$namespace'");
+    my $class_lookup = $self->getClassLookup();
+    if (!defined($class_lookup)){
+        $self->{_logger}->logconfess("class_lookup was not defined");
     }
 
-    return $namespace;    
-}
+    my $javascript_namespace = $self->getJavaScriptNamespace();
+    if (!defined($javascript_namespace)){
+        $self->{_logger}->logconfess("javascript_namespace was not defined");
+    }
+   
+    $self->{_namespace} = $namespace;
 
+    $self->{_javascript_namespace} = $javascript_namespace;
+
+    $self->{_class_lookup} = $class_lookup;
+
+    $self->_derive_contents();
+
+    my $template_file = $self->getClassTemplateFile();
+
+    my $outfile = $self->_get_outfile($self->{_namespace});
+
+    $self->_write_file($template_file, $self->{_template_lookup}, $outfile);
+}
 
 sub _derive_class_details {
 
@@ -171,7 +138,7 @@ sub _derive_instance_variable_name {
 
     my $self = shift;
 
-    my $namespace = $self->{_current_javascript_namespace};
+    my $namespace = $self->{_javascript_namespace};
 
     $namespace =~ s|::||g;
 
@@ -185,7 +152,7 @@ sub _derive_namespace_declaration {
 
     my $self = shift;
 
-    my @parts = split(/\./, $self->{_current_javascript_namespace});
+    my @parts = split(/\./, $self->{_javascript_namespace});
 
     my $portion;
 
@@ -214,124 +181,6 @@ sub _derive_namespace_declaration {
     }
     
     $self->{_namespace_declaration_content} = $content;
-}
-
-sub _derive_private_data_members {
-
-    my $self = shift;
-    my ($class_lookup) = @_;
-
-    if (( exists $class_lookup->{private_data_members_list}) && 
-        ( defined $class_lookup->{private_data_members_list})){
-        
-        my $content = '';
-
-        foreach my $record (@{$class_lookup->{private_data_members_list}}){
-
-            my $name = $record->getName();
-
-            $content .= '    var ' . $name . "\n";
-
-        }
-
-        $self->{_private_data_members_content} = $content;
-    }
-    else {
-        $self->{_logger}->info("Looks like there are no private data members for class '$self->{_current_javascript_namespace}'");
-    }
-}
-
-
-sub _derive_dependencies_variables {
-
-    my $self = shift;
-
-
-    if (( exists $self->{_current_class_lookup}->{depends_on_list}) && 
-        ( defined $self->{_current_class_lookup}->{depends_on_list})){
-
-        my $variable_name_list = [];
-        
-        my $dependency_namespace_list = [];
-
-        my $lookup = {};
-
-        my $list = [];
-
-        foreach my $dependency (@{$self->{_current_class_lookup}->{depends_on_list}}){
-            
-            $dependency = $self->_derive_javascript_namespace($dependency);
-
-            push(@{$dependency_namespace_list}, $dependency);
-
-            $dependency =~ s|\.||g;
-
-            my $variable_name = lcfirst($dependency);
-
-            push(@{$list}, $variable_name);
-
-            $lookup->{$dependency} = $variable_name;
-        }
-
-        my $dependencies_variables_content = '';
-
-        foreach my $variable_name (@{$list}){
-            $dependencies_variables_content .= "let $variable_name;\n";
-        }
-
-        $self->{_dependencies_variables_content} = $dependencies_variables_content;
-
-
-
-        my $dependencies_instantiations_content = '';
-
-        foreach my $dependency (@{$dependency_namespace_list}){
-
-            my $variable_name = $lookup->{$dependency};
-            
-            $dependencies_instantiations_content .= "$variable_name = $dependency.getInstance();\n".
-            "if (!defined($variable_name)){\n".
-            "    throw new Error(\"Could not instantiate $dependency\");\n".
-            "}\n\n";
-        }
-
-
-        $self->{_dependencies_instantiations_content} = $dependencies_instantiations_content;
-
-    }
-    else {
-        $self->{_logger}->info("Looks like there are no dependencies for '$self->{_current_javascript_namespace}'");
-
-    }
-}
-
-
-sub _derive_functions_backup {
-
-    my $self = shift;
-
-
-    if (( exists $self->{_current_class_lookup}->{depends_on_list}) && 
-        ( defined $self->{_current_class_lookup}->{depends_on_list})){
-
-        foreach my $dependency (@{$self->{_current_class_lookup}->{depends_on_list}}){
-            
-            $dependency = $self->_derive_javascript_namespace($dependency);
-
-            $dependency =~ s|\.||g;
-
-            my $variable_name = lcfirst($dependency);
-
-            push(@{$self->{_dependencies_variables_list}}, $variable_name);
-
-            $self->{_dependency_namespace_lookup}->{$dependency} = $variable_name;
-
-        }
-    }
-    else {
-        $self->{_logger}->info("Looks like there are no dependencies for '$self->{_current_javascript_namespace}'");
-
-    }
 }
 
 sub _derive_constants {
@@ -364,10 +213,9 @@ sub _derive_constants {
         $self->{_constants_content} = $content;
     }
     else {
-        $self->{_logger}->info("Looks like there are no constants for class '$self->{_current_javascript_namespace}'");
+        $self->{_logger}->info("Looks like there are no constants for class '$self->{_javascript_namespace}'");
     }
 }
-
 
 sub _derive_functions {
 
@@ -398,7 +246,7 @@ sub _derive_private_functions {
         $self->{_private_functions_content} = $content;
     }
     else {
-        $self->{_logger}->info("Looks like there are no private methods/functions for class '$self->{_current_javascript_namespace}'");
+        $self->{_logger}->info("Looks like there are no private methods/functions for class '$self->{_javascript_namespace}'");
     }
 }
             
@@ -432,142 +280,23 @@ sub _get_camel_case_function_name {
 }
 
 
-sub _derive_getters_and_setters {
-
-    my $self = shift;
-    my ($class_lookup) = @_;
-
-    if (( exists $class_lookup->{private_data_members_list}) && 
-        ( defined $class_lookup->{private_data_members_list})){
-        
-        my $content = '';
-
-        foreach my $record (@{$class_lookup->{private_data_members_list}}){
-
-            my $name = $record->getName();
-
-            my $function_name = ucfirst(lc($name));
-
-            if ($function_name =~ m|_|){
-
-                $function_name = $self->_get_camel_case_function_name($function_name);
-            }
-
-            $content .= '    const get' . $function_name . ' = function (){' . "\n";
-            $content .= '        return ' . $name . ';' . "\n";
-            $content .= '    };' . "\n\n";
-
-            $content .= '    const set' . $function_name . ' = function (val){' . "\n";
-            $content .= '        ' . $name . ' = val;' . "\n";
-            $content .= '    };' . "\n\n";
-
-        }
-
-        $self->{_public_functions_content} = $content;
-    }
-    else {
-        $self->{_logger}->info("Looks like there are no public methods/functions for class '$self->{_current_javascript_namespace}'");
-    }
-}
-
-sub _derive_public_functions {
-
-    my $self = shift;
-    my ($class_lookup) = @_;
-
-    $self->{_public_functions_content} = '';
-
-    $self->_derive_getters_and_setters(@_);
-
-    if (( exists $class_lookup->{public_methods_list}) && 
-        ( defined $class_lookup->{public_methods_list})){
-        
-        my $content = '';
-
-        foreach my $record (@{$class_lookup->{public_methods_list}}){
-
-            $content .= 'const ' . $record->getName() . ' = function (){' . "\n".
-            '};' . "\n\n";
-        }
-
-        $self->{_public_functions_content} .= $content;
-    }
-    else {
-        $self->{_logger}->info("Looks like there are no public methods/functions for class '$self->{_current_javascript_namespace}'");
-    }
-}
-
-
-sub _derive_return_function_list {
-
-    my $self = shift;
-    my ($class_lookup) = @_;
-
-    if (( exists $class_lookup->{public_methods_list}) && 
-        ( defined $class_lookup->{public_methods_list})){
-        
-
-        my $list = [];
-
-        foreach my $record (@{$class_lookup->{public_methods_list}}){
-
-            my $name = $record->getName();
-
-            my $val = $name . " : " . $name;
-            
-            push(@{$list}, $val);
-        }
-
-        my $content = join(",\n", @{$list});
-
-        $self->{_logger}->info("return_function_list_content '$content'");
-
-        $self->{_return_function_list_content} = $content;
-    }
-    else {
-        $self->{_logger}->info("Looks like there are no public methods/functions for class '$self->{_current_javascript_namespace}'");
-    }
-}
-
 sub _write_file {
 
     my $self = shift;
-    my ($template_file) = @_;
-
-
-    my $outfile = $self->_get_outfile($self->{_current_namespace});
-
+    my ($template_file, $lookup, $outfile) = @_;
 
     my $tt = new Template({ABSOLUTE => 1});
     if (!defined($tt)){
         $self->{_logger}->logconfess("Could not instantiate TT");
     }
 
-
-    my $lookup = {
-        instance_variable_name              => $self->{_instance_variable_name},
-        namespace_declaration_content       => $self->{_namespace_declaration_content},
-        namespace                           => $self->{_current_javascript_namespace},
-        constants_content                   => $self->{_constants_content},
-        dependencies_variables_content      => $self->{_dependencies_variables_content},
-        dependencies_instantiations_content => $self->{_dependencies_instantiations_content},
-        private_funtions_content            => $self->{_private_functions_content},
-        public_functions_content            => $self->{_public_functions_content},
-        return_function_list_content        => $self->{_return_function_list_content},
-        private_data_members_content        => $self->{_private_data_members_content}
-    };
-
-
     $tt->process($template_file, $lookup, $outfile) || $self->{_logger}->logconfess("Encountered the following Template::process error:" . $tt->error());
-
 
     if ($self->getVerbose()){
         print "Wrote JavaScript class file '$outfile'\n";
     }
 
     $self->{_logger}->info("Wrote JavaScript class file '$outfile'");
-
-    push(@{$self->{_module_file_list}}, $outfile);
 }
 
 sub _get_outfile {
@@ -596,7 +325,6 @@ sub _get_outfile {
     return $outfile;
 }
 
-
 sub _print_summary {
 
     my $self = shift;
@@ -607,6 +335,33 @@ sub _print_summary {
         
         print join("\n", @{$self->{_module_file_list}}) . "\n";
     }
+}
+
+sub _generate_content_from_template {
+
+    my $self = shift;
+    my ($template_file, $lookup) = @_;
+
+    my $tt = new Template({ABSOLUTE => 1});
+    if (!defined($tt)){
+        $self->{_logger}->logconfess("Could not instantiate TT");
+    }
+
+    my $tmp_outfile = $self->getOutdir() . '/out.pm';
+
+    $tt->process($template_file, $lookup, $tmp_outfile) || $self->{_logger}->logconfess("Encountered the following Template::process error:" . $tt->error());
+    
+    $self->{_logger}->info("Wrote temporary output file '$tmp_outfile'");
+
+    my @lines = read_file($tmp_outfile);
+
+    my $content = join("", @lines);
+
+    unlink($tmp_outfile) || $self->{_logger}->logconfess("Could not unlink temporary output file '$tmp_outfile' : $!");
+
+    $self->{_logger}->info("temporary output file '$tmp_outfile' was removed");
+
+    return $content;
 }
 
 

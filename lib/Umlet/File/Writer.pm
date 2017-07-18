@@ -203,7 +203,7 @@ sub createAPI {
 
     $self->_create_api(@_);
 
-    $self->_print_summary(@_);
+    # $self->_print_summary(@_);
 }
 
 

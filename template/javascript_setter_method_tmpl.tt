@@ -1,0 +1,9 @@
+[% namespace %].prototype.set[% method_name %] = function ([% variable_name %]){
+    
+    if (!defined([% variable_name %])){
+        throw new Error ("[% variable_name %] was not defined");
+    }
+    else {
+        this.[% attribute_name %] = [% variable_name %];
+    }
+};

@@ -3,12 +3,10 @@ package Umlet::ClassDiagram::JavaScript::API::Converter;
 ## Converts Umlet Class Diagram into set of JavaScript class files.
 
 use Moose;
-use Cwd;
-use Term::ANSIColor;
 
 use Umlet::Config::Manager;
 use Umlet::JavaScript::ClassDiagram::File::XML::Parser;
-use Umlet::JavaScript::Class::File::Writer;
+use Umlet::JavaScript::API::Class::File::Writer;
 
 extends 'Umlet::Converter';
 
@@ -61,14 +59,13 @@ sub _initAPIWriter {
 
     my $self = shift;
 
-    my $writer = new Umlet::JavaScript::Class::File::Writer(@_);
+    my $writer = new Umlet::JavaScript::API::Class::File::Writer(@_);
     if (!defined($writer)){
-        $self->{_logger}->logconfess("Could not instantiate Umlet::JavaScript::Class::File::Writer");
+        $self->{_logger}->logconfess("Could not instantiate Umlet::JavaScript::API::Class::File::Writer");
     }
 
     $self->{_writer} = $writer;
 }
-
 
 sub runConversion {
 

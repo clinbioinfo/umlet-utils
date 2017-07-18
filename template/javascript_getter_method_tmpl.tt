@@ -1,0 +1,4 @@
+[% namespace %].prototype.get[% method_name %] = function (){
+    
+    return this.[% attribute_name %];    
+};

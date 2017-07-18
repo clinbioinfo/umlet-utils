@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="13.0">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>430</x>
+      <y>330</y>
+      <w>270</w>
+      <h>230</h>
+    </coordinates>
+    <panel_attributes>Stark.Industries.ArcReactor.Pulldown
+--
+bg=yellow
+//comment 1
+//singleton
+constant verbose = true
+-pulldown_id:string
+-options_list:string[]
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>60</x>
+      <y>120</y>
+      <w>230</w>
+      <h>230</h>
+    </coordinates>
+    <panel_attributes>Stark.Industries.ArcReactor.Analysis
+--
+bg=red
+//singleton
+//comment 1
+
+constant max_table_count = 3
+constant verbose = true
+-analysis_id:string
+-table:Stark.Industries.ArcReactor.Table
+-pulldown:Stark.Industries.ArcReactor.Pulldown
+--
++calculateMannW()
++displayResults()
+-privateMethod1()
+-privateFunction1()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>440</x>
+      <y>30</y>
+      <w>230</w>
+      <h>230</h>
+    </coordinates>
+    <panel_attributes>Stark.Industries.ArcReactor.Table
+--
+bg=orange
+//comment 1
+//singleton
+
+constant max_height = 400
+constant max_width = 600
+-table_id:string
+-title:string
+-x_axis_label:string
+-y_axis_label:string
+--
++hide()
++render()
+-generateCSVDownloadFile()
+-generateCSVDownloadFileLink()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>430</x>
+      <y>330</y>
+      <w>270</w>
+      <h>230</h>
+    </coordinates>
+    <panel_attributes>Stark.Industries.ArcReactor.Record
+--
+bg=yellow
+//comment 1
+constant verbose = true
+-id:string
+-location_id:string
+-energy_output:int
+-status:string
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>280</x>
+      <y>60</y>
+      <w>180</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>160.0;10.0;10.0;110.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>280</x>
+      <y>190</y>
+      <w>170</w>
+      <h>210</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>150.0;190.0;10.0;10.0</additional_attributes>
+  </element>
+</diagram>
