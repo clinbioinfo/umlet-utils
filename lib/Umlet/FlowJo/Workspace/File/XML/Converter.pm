@@ -1,10 +1,12 @@
 package Umlet::FlowJo::Workspace::File::XML::Converter;
 
 use Moose;
+use Data::Dumper;
 
 use Umlet::Config::Manager;
 use Umlet::FlowJo::Workspace::File::XML::Parser;
 use Umlet::Datatype::Helper;
+use Umlet::ClassDiagram::File::XML::Writer;
 
 extends 'Umlet::Converter';
 
@@ -39,11 +41,20 @@ sub BUILD {
 
     $self->_initConfigManager(@_);
 
+    $self->_initAPI(@_);
+
+    $self->{_logger}->info("Instantiated ". __PACKAGE__);
+}
+
+sub _initAPI {
+    
+    my $self = shift;
+
     $self->_initParser(@_);
 
     $self->_initDataHelper(@_);
 
-    $self->{_logger}->info("Instantiated ". __PACKAGE__);
+    $self->_initFileWriter(@_);    
 }
 
 sub _initParser {
@@ -72,7 +83,19 @@ sub _initDataHelper {
     $self->{_datatype_helper} = $helper;
 }
 
-sub process {
+sub _initFileWriter {
+
+    my $self = shift;
+
+    my $writer = Umlet::ClassDiagram::File::XML::Writer::getInstance(@_);
+    if (!defined($writer)){
+        $self->{_logger}->logconfess("Could not instantiate Umlet::ClassDiagram::File::XML::Writer");
+    }
+
+    $self->{_file_writer} = $writer;
+}
+
+sub runConversion {
 
     my $self = shift;
 
@@ -81,22 +104,53 @@ sub process {
         $self->{_logger}->logconfess("attribute_lookup_lists was not defined");
     }
 
+    my $outfile = $self->getOutdir() . '/' . File::Basename::basename($0). '.txt';
+
+    open (OUTFILE, ">$outfile") || $self->{_logger}->logconfess("Could not open '$outfile' in write mode : $!");
+
+    print "Writing report file '$outfile'\n";    
+    
+    my $class_lookup_list = [];
+
     foreach my $lineage (sort keys %{$attribute_lookup_lists}){
+
+        my $class_lookup = {};
+
+        my $class_name = $lineage;
+
+        $class_name =~ s|\-\-\>|::|g;
+
+        $class_lookup->{'package_name'} = $class_name;
+
+        print OUTFILE "\n$lineage\n";
 
         foreach my $attribute_name (sort keys %{$attribute_lookup_lists->{$lineage}}){
 
-            my $list = $attribute_lookup_lists->{$attribute_name};
+            my $list = $attribute_lookup_lists->{$lineage}->{$attribute_name};
 
             my $datatype = $self->{_datatype_helper}->getDatatype($list);
-            if (!defined($datatype)){
-                $self->{_logger}->logconfess("datatype was not defined");
+
+            if (!defined($datatype)){    
+                $self->{_logger}->logconfess("datatype was not defined for lineage '$lineage' attribute name '$attribute_name' with values: " . Dumper $list);
             }
 
             $self->{_logger}->info("lineage '$lineage' attribute '$attribute_name' datatype '$datatype'");
+ 
+            print OUTFILE "$attribute_name:$datatype\n";
 
-            print "For lineage '$lineage' attribute '$attribute_name' datatype '$datatype'\n";
+            push(@{$class_lookup->{'has_list'}}, "$attribute_name:$datatype:required=false");
         }
+
+        push(@{$class_lookup_list}, $class_lookup);
     }
+
+    close OUTFILE;
+
+    $self->{_logger}->info("Wrote records to '$outfile'");
+    
+
+    $self->{_file_writer}->writeFile($class_lookup_list);
+
 }
 
 

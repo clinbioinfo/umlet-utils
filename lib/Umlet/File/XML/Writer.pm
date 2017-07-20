@@ -30,6 +30,8 @@ use constant DEFAULT_TEMPLATE_CLASS_FILE => "$FindBin::Bin/../template/class_ele
 
 use constant DEFAULT_ZOOM_LEVEL => 10;
 
+use constant DEFAULT_SET_BACKGROUND_COLOR_GREEN => FALSE;
+
 ## Singleton support
 my $instance;
 
@@ -51,7 +53,6 @@ has 'config_file' => (
     reader   => 'getConfigfile',
     required => FALSE,
     );
-
 
 has 'outdir' => (
     is       => 'rw',
@@ -116,6 +117,15 @@ has 'outfile' => (
     writer   => 'setOutfile',
     reader   => 'getOutfile',
     required => FALSE
+    );
+
+has 'set_background_color_green' => (
+    is       => 'rw',
+    isa      => 'Str',
+    writer   => 'setBackgroundColorGreen',
+    reader   => 'getBackgroundColorGreen',
+    required => FALSE,
+    default  => DEFAULT_SET_BACKGROUND_COLOR_GREEN
     );
 
 
@@ -242,7 +252,9 @@ sub _load_class_content {
 
         $w_coord = $width + 10;
 
-        push(@{$class_content_stack}, "bg=green"); 
+        if ($self->setBackgroundColorGreen()){
+            push(@{$class_content_stack}, "bg=green"); 
+        }
 
 
         if (exists $class_lookup->{use_list}){

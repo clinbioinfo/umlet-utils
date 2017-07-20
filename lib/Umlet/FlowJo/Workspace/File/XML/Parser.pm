@@ -1,7 +1,9 @@
 package Umlet::FlowJo::Workspace::File::XML::Parser;
 
 use Moose;
+use Data::Dumper;
 use XML::Twig;
+use Term::ANSIColor;
 
 extends 'Umlet::File::XML::Parser';
 
@@ -75,11 +77,15 @@ sub _parse_file {
 
     $self->{_logger}->info("About to parse input file '$infile'");
 
+    printBrightBlue("About to parse input file '$infile'\n");
+
     $twig->parsefile($infile);
 
     $self->{_is_parsed} = TRUE;
 
     $self->{_logger}->info("Finished parsing the input file '$infile'");    
+
+    printBrightBlue("Finished parsing input file '$infile'\n");    
 }
 
 sub workspaceHandler {
@@ -87,17 +93,22 @@ sub workspaceHandler {
     my $self = $this;
     my ($twig, $elem) = @_;
 
-    my $parent_name = 'root';
+    my $element_name = 'root';
 
-    my $element_name = $elem->name();
+    push(@{$self->{_stack}}, 'Workspace');
 
-    if (!defined($element_name)){
-        $self->{_logger}->logconfess("element_name was not defined");
-    }
+    # $self->{_stack} = [];
 
-    $self->_process_element_attributes($parent_name, $element_name, $elem);
+    # my $element_name = $elem->name();
 
-    $self->_process_children_elements($parent_name, $elem);
+    # if (!defined($element_name)){
+    #     $element_name = 'root';
+    #     $self->{_logger}->warn("element_name was not defined and therefore was set to '$element_name'");
+    # }
+
+    $self->_process_element_attributes($element_name, $elem);
+
+    $self->_process_children_elements($element_name, $elem);
 }
 
 sub _process_children_elements {
@@ -105,42 +116,107 @@ sub _process_children_elements {
     my $self = shift;
     my ($parent_name, $elem) = @_;
 
+    my $element_name = $elem->name();
+
+    if (!defined($element_name)){
+        $self->{_logger}->logconfess("element_name was not defined");
+    }
+
+    # push(@{$self->{_stack}}, $element_name);
 
     if ($elem->children_count() > 0){
-     
+
+        $self->{_logger}->info("Going to process the children of '$element_name' whose parent's name is '$parent_name'");
+
+        push(@{$self->{_stack}}, $element_name);
+
+        my $child_ctr = 0;
+
         foreach my $child_elem ($elem->children()){
 
-            my $element_name = $child_elem->name();
+            $child_ctr++;
 
-            print "Processing '$element_name', child of '$parent_name'\n";
+            # if ($child_ctr > 2){
+            #     last;
+            # }
 
-            if (!defined($element_name)){
-                $self->{_logger}->logconfess("element_name was not defined");
+            my $child_element_name = $child_elem->name();
+
+            if (!defined($child_element_name)){
+                $self->{_logger}->logconfess("child_element_name was not defined");
             }
 
-            $self->_process_element_attributes($parent_name, $element_name, $child_elem);
+            # push(@{$self->{_stack}}, $child_element_name);
 
-            $self->_process_children_elements($parent_name, $child_elem);
+            # print "Processing '$child_element_name', child of '$element_name'\n";
+
+            $self->_process_element_attributes($element_name, $child_elem);
+
+            $self->_process_children_elements($element_name, $child_elem);
+
+            # pop(@{$self->{_stack}});
         }
+
+        pop(@{$self->{_stack}});
+    }
+    else {
+        $self->{_logger}->info("Element '$element_name' (whose parent's name is '$parent_name') does not have any children");
     }
 }
 
 sub _process_element_attributes {
 
     my $self = shift;
-    my ($parent_name, $element_name, $elem) = @_;
+    my ($parent_name, $elem) = @_;
 
-    my @attribute_name_list = $elem->atts;
+    my $element_name = $elem->name();
 
-    my $lineage = $parent_name . '::' . $element_name;
+    if (!defined($element_name)){
+        $self->{_logger}->logconfess("element_name was not defined");
+    }
 
-    foreach my $attribute_name (@attribute_name_list){
+    if (exists $elem->{'att'}){
 
-        my $attribute_value = $elem->{att}->{$attribute_name};
+        foreach my $attribute_name (sort keys %{$elem->{'att'}}){
 
-        push(@{$self->{_attribute_lookup_lists}->{$lineage}->{$attribute_name}}, $attribute_value);   
+            my $attribute_value = 'N/A';
+
+            if (exists $elem->{'att'}->{$attribute_name}){
+
+                $attribute_value = $elem->{'att'}->{$attribute_name};
+            }
+
+            my $lineage = $parent_name . '-->' . $element_name;
+            my $lineage2 = join('-->', @{$self->{_stack}}) . '-->' . $element_name;
+
+            # die ("lineage '$lineage' lineage2 '$lineage2'");
+
+            $self->{_logger}->info("lineage '$lineage' lineage2 '$lineage2'");
+
+            push(@{$self->{_attribute_lookup_lists}->{$lineage2}->{$attribute_name}}, $attribute_value);   
+        }
+    }
+    else {
+        $self->{_logger}->info("'$element_name' does not have any attributes");
     }
 }
+
+
+    #         my @attribute_name_list = $elem->atts;
+
+    #         print Dumper \@attribute_name_list;die;
+
+    #         my $lineage = $parent_name . '-->' . $element_name;
+
+    #         foreach my $attribute_name (@attribute_name_list){
+
+    #             my $attribute_value = $elem->{att}->{$attribute_name};
+
+    #             push(@{$self->{_attribute_lookup_lists}->{$lineage}->{$attribute_name}}, $attribute_value);   
+    #         }
+    #     }
+    # }
+
 
 sub getAttributeLookupLists {
 
@@ -151,6 +227,22 @@ sub getAttributeLookupLists {
     }    
     
     return $self->{_attribute_lookup_lists};
+}
+
+sub printGreen {
+
+    my ($msg) = @_;
+    print color 'green';
+    print $msg;
+    print color 'reset';
+}
+
+sub printBrightBlue {
+
+    my ($msg) = @_;
+    print color 'bright_blue';
+    print $msg;
+    print color 'reset';
 }
 
 no Moose;

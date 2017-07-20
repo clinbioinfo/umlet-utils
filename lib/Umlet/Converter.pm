@@ -141,11 +141,18 @@ sub BUILD {
 
     $self->_initConfigManager(@_);
 
+    $self->_initAPI(@_);
+
+    $self->{_logger}->info("Instantiated ". __PACKAGE__);
+}
+
+sub _initAPI {
+
+    my $self = shift;
+
     $self->_initUmletFileParser(@_);
 
     $self->_initAPIWriter(@_);
-
-    $self->{_logger}->info("Instantiated ". __PACKAGE__);
 }
 
 sub _initLogger {

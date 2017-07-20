@@ -116,8 +116,13 @@ sub getDatatype {
     elsif ($unique_ctr == $bool_ctr){
         $datatype =  'bool';
     }
+    else {
+        $datatype =  'string';   
+    }
 
     $self->{_logger}->info("Processed '$ctr' values, '$unique_ctr' unique values and determined the datatype to be '$datatype'");
+
+    return $datatype;
 }
 
 

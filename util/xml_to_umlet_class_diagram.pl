@@ -22,7 +22,7 @@ use constant DEFAULT_VERBOSE => FALSE;
 
 use constant DEFAULT_USERNAME => $ENV{USER};
 
-use constant DEFAULT_LOG_LEVEL => 3;
+use constant DEFAULT_LOG_LEVEL => 4;
 
 use constant DEFAULT_SUPPRESS_CHECKPOINTS => FALSE;
 

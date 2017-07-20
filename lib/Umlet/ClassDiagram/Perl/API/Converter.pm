@@ -39,10 +39,8 @@ sub BUILD {
 
     $self->_initConfigManager(@_);
 
-    $self->_initUmletFileParser(@_);
-
-    $self->_initAPIWriter(@_);
-
+    $self->_initAPI(@_);
+    
     $self->{_logger}->info("Instantiated ". __PACKAGE__);
 }
 
