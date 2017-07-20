@@ -148,7 +148,6 @@ sub runConversion {
 
     $self->{_logger}->info("Wrote records to '$outfile'");
     
-
     $self->{_file_writer}->writeFile($class_lookup_list);
 
 }

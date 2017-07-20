@@ -95,16 +95,7 @@ sub workspaceHandler {
 
     my $element_name = 'root';
 
-    push(@{$self->{_stack}}, 'Workspace');
-
-    # $self->{_stack} = [];
-
-    # my $element_name = $elem->name();
-
-    # if (!defined($element_name)){
-    #     $element_name = 'root';
-    #     $self->{_logger}->warn("element_name was not defined and therefore was set to '$element_name'");
-    # }
+    push(@{$self->{_stack}}, $element_name);
 
     $self->_process_element_attributes($element_name, $elem);
 
@@ -122,8 +113,6 @@ sub _process_children_elements {
         $self->{_logger}->logconfess("element_name was not defined");
     }
 
-    # push(@{$self->{_stack}}, $element_name);
-
     if ($elem->children_count() > 0){
 
         $self->{_logger}->info("Going to process the children of '$element_name' whose parent's name is '$parent_name'");
@@ -136,25 +125,15 @@ sub _process_children_elements {
 
             $child_ctr++;
 
-            # if ($child_ctr > 2){
-            #     last;
-            # }
-
             my $child_element_name = $child_elem->name();
 
             if (!defined($child_element_name)){
                 $self->{_logger}->logconfess("child_element_name was not defined");
             }
 
-            # push(@{$self->{_stack}}, $child_element_name);
-
-            # print "Processing '$child_element_name', child of '$element_name'\n";
-
             $self->_process_element_attributes($element_name, $child_elem);
 
             $self->_process_children_elements($element_name, $child_elem);
-
-            # pop(@{$self->{_stack}});
         }
 
         pop(@{$self->{_stack}});
@@ -186,12 +165,9 @@ sub _process_element_attributes {
                 $attribute_value = $elem->{'att'}->{$attribute_name};
             }
 
-            my $lineage = $parent_name . '-->' . $element_name;
-            my $lineage2 = join('-->', @{$self->{_stack}}) . '-->' . $element_name;
+            my $lineage = join('-->', @{$self->{_stack}}) . '-->' . $element_name;
 
-            # die ("lineage '$lineage' lineage2 '$lineage2'");
-
-            $self->{_logger}->info("lineage '$lineage' lineage2 '$lineage2'");
+            $self->{_logger}->info("lineage '$lineage'");
 
             push(@{$self->{_attribute_lookup_lists}->{$lineage2}->{$attribute_name}}, $attribute_value);   
         }
@@ -200,23 +176,6 @@ sub _process_element_attributes {
         $self->{_logger}->info("'$element_name' does not have any attributes");
     }
 }
-
-
-    #         my @attribute_name_list = $elem->atts;
-
-    #         print Dumper \@attribute_name_list;die;
-
-    #         my $lineage = $parent_name . '-->' . $element_name;
-
-    #         foreach my $attribute_name (@attribute_name_list){
-
-    #             my $attribute_value = $elem->{att}->{$attribute_name};
-
-    #             push(@{$self->{_attribute_lookup_lists}->{$lineage}->{$attribute_name}}, $attribute_value);   
-    #         }
-    #     }
-    # }
-
 
 sub getAttributeLookupLists {
 
@@ -254,7 +213,7 @@ __END__
 =head1 NAME
 
  Umlet::FlowJo::Workspace::File::XML::Parser
- 
+
 
 =head1 VERSION
 
