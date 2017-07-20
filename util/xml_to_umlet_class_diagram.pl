@@ -97,8 +97,17 @@ my $converter = Umlet::FlowJo::Workspace::File::XML::Converter::getInstance(
 if (!defined($converter)){
     $logger->logdie("Could not instantiate Umlet::FlowJo::Workspace::File::XML::Converter");
 }
-    
+
+
+my $start_time = localtime();
+
+print "Started at '$start_time'\n";
+
 $converter->run();
+
+my $end_time = localtime();
+
+print "Ended at '$end_time'\n";
 
 printGreen(File::Spec->rel2abs($0) . " execution completed");
 

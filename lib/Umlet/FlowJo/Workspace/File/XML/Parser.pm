@@ -158,6 +158,16 @@ sub _process_element_attributes {
 
         foreach my $attribute_name (sort keys %{$elem->{'att'}}){
 
+            if ($attribute_name =~ m|:|){
+                $attribute_name =~ s|:|_|g;
+                $self->{_logger}->info("Replaced ':' with '_' in attribute name '$attribute_name' for element '$element_name' with parent '$parent_name'");
+            }
+
+            if ($attribute_name =~ m|\-|){
+                $attribute_name =~ s|-|_|g;
+                $self->{_logger}->info("Replaced '-' with '_' in attribute name '$attribute_name' for element '$element_name' with parent '$parent_name'");
+            }
+
             my $attribute_value = 'N/A';
 
             if (exists $elem->{'att'}->{$attribute_name}){

@@ -138,7 +138,11 @@ sub runConversion {
  
             print OUTFILE "$attribute_name:$datatype\n";
 
-            push(@{$class_lookup->{'has_list'}}, "$attribute_name:$datatype:required=false");
+            # $attribute_name =~ s|\-|_|g;
+
+            # $attribute_name=~ s|:|_|g;
+
+            push(@{$class_lookup->{'has_list'}}, "$attribute_name:$datatype;required=false");
         }
 
         push(@{$class_lookup_list}, $class_lookup);

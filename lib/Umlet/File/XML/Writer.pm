@@ -313,6 +313,10 @@ sub _load_class_content {
 
             foreach my $has (sort @{$class_lookup->{has_list}}){
 
+                # $has =~ s|:|_|g;
+                
+                # $has =~ s|\-|_|g;
+
                 push(@{$class_content_stack}, "-$has");
 
                 $ctr++;
