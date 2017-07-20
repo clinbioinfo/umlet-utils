@@ -169,7 +169,7 @@ sub _process_element_attributes {
 
             $self->{_logger}->info("lineage '$lineage'");
 
-            push(@{$self->{_attribute_lookup_lists}->{$lineage2}->{$attribute_name}}, $attribute_value);   
+            push(@{$self->{_attribute_lookup_lists}->{$lineage}->{$attribute_name}}, $attribute_value);   
         }
     }
     else {
