@@ -121,7 +121,7 @@ has 'outfile' => (
 
 has 'set_background_color_green' => (
     is       => 'rw',
-    isa      => 'Str',
+    isa      => 'Bool',
     writer   => 'setBackgroundColorGreen',
     reader   => 'getBackgroundColorGreen',
     required => FALSE,
