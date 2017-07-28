@@ -1,10 +1,10 @@
-package Umlet::JavaScript::API::Class::File::Writer;
+package Umlet::Python::API::Class::File::Writer;
 
 use Moose;
 
 use Umlet::Config::Manager;
-use Umlet::JavaScript::Class::Regular::File::Writer;
-use Umlet::JavaScript::Class::Singleton::File::Writer;
+use Umlet::Python::Class::Regular::File::Writer;
+use Umlet::Python::Class::Singleton::File::Writer;
 
 extends 'Umlet::API::Class::File::Writer';
 
@@ -19,11 +19,11 @@ sub getInstance {
 
     if (!defined($instance)){
 
-        $instance = new Umlet::JavaScript::API::Class::File::Writer(@_);
+        $instance = new Umlet::Python::API::Class::File::Writer(@_);
 
         if (!defined($instance)){
 
-            confess "Could not instantiate Umlet::JavaScript::API::Class::File::Writer";
+            confess "Could not instantiate Umlet::Python::API::Class::File::Writer";
         }
     }
     return $instance;
@@ -45,39 +45,43 @@ sub _initClassSingletonFileWriter {
 
     my $self = shift;
     my ($class_lookup, $current_namespace, $language_namespace, $outdir) = @_;
-    
-    my $writer = new Umlet::JavaScript::Class::Singleton::File::Writer(
+
+   
+    my $writer = new Umlet::Python::Class::Singleton::File::Writer(
         class_lookup         => $class_lookup,
         namespace            => $current_namespace,
-        javascript_namespace => $language_namespace,
+        python_namespace     => $language_namespace,
         outdir               => $outdir
         );
 
     if (!defined($writer)){
-        $self->{_logger}->logconfess("Could not instantiate Umlet::JavaScript::Class::Singleton::File::Writer");
+        $self->{_logger}->logconfess("Could not instantiate Umlet::Python::Class::Singleton::File::Writer");
     }
 
     return $writer;
 }
+
 
 sub _initClassRegularFileWriter {
 
     my $self = shift;
     my ($class_lookup, $current_namespace, $language_namespace, $outdir) = @_;
 
-    my $writer = new Umlet::JavaScript::Class::Regular::File::Writer(
+
+    my $writer = new Umlet::Python::Class::Regular::File::Writer(
         class_lookup         => $class_lookup,
         namespace            => $current_namespace,
-        javascript_namespace => $language_namespace,
+        python_namespace     => $language_namespace,
         outdir               => $outdir
         );
 
     if (!defined($writer)){
-        $self->{_logger}->logconfess("Could not instantiate Umlet::JavaScript::Class::Regular::File::Writer");
+        $self->{_logger}->logconfess("Could not instantiate Umlet::Python::Class::Regular::File::Writer");
     }
 
     return $writer;
 }
+
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
@@ -87,7 +91,7 @@ __END__
 
 =head1 NAME
 
- Umlet::JavaScript::API::Class::File::Writer
+ Umlet::Python::API::Class::File::Writer
  
 
 =head1 VERSION
@@ -96,8 +100,8 @@ __END__
 
 =head1 SYNOPSIS
 
- use Umlet::JavaScript::API::Class::File::Writer;
- my $manager = Umlet::JavaScript::API::Class::File::Writer::getInstance();
+ use Umlet::Python::API::Class::File::Writer;
+ my $manager = Umlet::Python::API::Class::File::Writer::getInstance();
  $manager->commitCodeAndPush($comment);
 
 =head1 AUTHOR

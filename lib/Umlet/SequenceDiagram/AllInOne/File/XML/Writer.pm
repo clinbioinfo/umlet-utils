@@ -7,6 +7,7 @@ use File::Slurp;
 use File::Basename;
 use File::Path;
 use File::Copy;
+use FindBin;
 
 use Umlet::Config::Manager;
 

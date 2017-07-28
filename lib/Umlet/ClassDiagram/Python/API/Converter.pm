@@ -1,28 +1,31 @@
-package Umlet::ClassDiagram::JavaScript::API::Converter;
-
-## Converts Umlet Class Diagram into set of JavaScript class files.
+package Umlet::ClassDiagram::Python::API::Converter;
 
 use Moose;
 
 use Umlet::Config::Manager;
-use Umlet::JavaScript::ClassDiagram::File::XML::Parser;
-use Umlet::JavaScript::API::Class::File::Writer;
+use Umlet::Python::ClassDiagram::File::XML::Parser;
+use Umlet::Python::API::Class::File::Writer;
 
 extends 'Umlet::Converter';
+
+use constant TRUE  => 1;
+
+use constant FALSE => 0;
 
 
 ## Singleton support
 my $instance;
 
+
 sub getInstance {
 
     if (!defined($instance)){
 
-        $instance = new Umlet::ClassDiagram::JavaScript::API::Converter(@_);
+        $instance = new Umlet::ClassDiagram::Python::API::Converter(@_);
 
         if (!defined($instance)){
 
-            confess "Could not instantiate Umlet::ClassDiagram::JavaScript::API::Converter";
+            confess "Could not instantiate Umlet::ClassDiagram::Python::API::Converter";
         }
     }
     return $instance;
@@ -41,13 +44,16 @@ sub BUILD {
     $self->{_logger}->info("Instantiated ". __PACKAGE__);
 }
 
+
 sub _initUmletFileParser {
 
     my $self = shift;
 
-    my $parser = Umlet::JavaScript::ClassDiagram::File::XML::Parser::getInstance(@_);
+    ## Module for parsing a Class Digram in UMLet where the classes represent Perl modules
+
+    my $parser = Umlet::Python::ClassDiagram::File::XML::Parser::getInstance(@_);
     if (!defined($parser)){
-        $self->{_logger}->logconfess("Could not instantiate Umlet::JavaScript::ClassDiagram::File::XML::Parser");
+        $self->{_logger}->logconfess("Could not instantiate Umlet::Python::ClassDiagram::File::XML::Parser");
     }
 
     $self->{_parser} = $parser;
@@ -57,9 +63,9 @@ sub _initAPIWriter {
 
     my $self = shift;
 
-    my $writer = new Umlet::JavaScript::API::Class::File::Writer(@_);
+    my $writer = new Umlet::Python::API::Class::File::Writer(@_);
     if (!defined($writer)){
-        $self->{_logger}->logconfess("Could not instantiate Umlet::JavaScript::API::Class::File::Writer");
+        $self->{_logger}->logconfess("Could not instantiate Umlet::Python::API::Class::File::Writer");
     }
 
     $self->{_writer} = $writer;
@@ -85,7 +91,7 @@ sub runConversion {
 
         if ($self->getVerbose()){
 
-            print "Conversion completed: created the JavaScript API class files.\n";
+            print "Conversion completed: created the Python API class files.\n";
 
             print "See output files in directory '$self->getOutdir()'\n";
         }
@@ -105,8 +111,8 @@ __END__
 
 =head1 NAME
 
- Umlet::ClassDiagram::JavaScript::API::Converter
- 
+ Umlet::ClassDiagram::Python::API::Converter
+ A module for parsing UMLet .uxf file and writing out Python module files 
 
 =head1 VERSION
 
@@ -114,8 +120,8 @@ __END__
 
 =head1 SYNOPSIS
 
- use Umlet::ClassDiagram::JavaScript::API::Converter;
- my $converter = Umlet::ClassDiagram::JavaScript::API::Converter::getInstance();
+ use Umlet::ClassDiagram::Python::API::Converter;
+ my $converter = Umlet::ClassDiagram::Python::API::Converter::getInstance();
  $converter->runConversion();
 
 =head1 AUTHOR
