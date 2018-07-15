@@ -32,6 +32,8 @@ use constant DEFAULT_TEMPLATE_CLASS_FILE => "$FindBin::Bin/../template/class_ele
 
 use constant DEFAULT_ZOOM_LEVEL => 10;
 
+use constant DEFAULT_HEIGHT_FACTOR => 25;
+
 use constant DEFAULT_SET_BACKGROUND_COLOR_GREEN => FALSE;
 
 ## Singleton support
@@ -345,6 +347,8 @@ sub _load_class_content {
 
             # push(@{$class_content_stack}, "\n");
 
+            $ctr *= DEFAULT_HEIGHT_FACTOR;
+
             $h_coord += $ctr;
         }
 
@@ -374,7 +378,7 @@ sub _load_class_content {
 
         # $h_coord = $h_coord * 3;
 
-        if ($class_ctr == MAX_CLASS_PER_ROW){
+        if ($class_ctr % MAX_CLASS_PER_ROW == 0){
 
             ## Have processed 5 classes time to move to the next line
 
