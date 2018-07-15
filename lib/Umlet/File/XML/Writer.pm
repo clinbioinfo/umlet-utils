@@ -345,7 +345,14 @@ sub _load_class_content {
 
             foreach my $sub (sort @{$class_lookup->{sub_list}}){
 
-                push(@{$class_content_stack}, "+$sub()");
+                if ($sub =~ /^_/){
+                    $sub = '-' . $sub;
+                }
+                else {
+                    $sub = '+' . $sub;
+                }
+
+                push(@{$class_content_stack}, "$sub()");
 
                 my $sub_name_width = length($sub);
                 if ($sub_name_width > $max_width){
