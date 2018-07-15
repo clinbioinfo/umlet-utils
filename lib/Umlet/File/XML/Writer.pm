@@ -34,6 +34,8 @@ use constant DEFAULT_ZOOM_LEVEL => 10;
 
 use constant DEFAULT_HEIGHT_FACTOR => 25;
 
+use constant DEFAULT_CLASS_WIDTH_FACTOR => 7;
+
 use constant DEFAULT_SET_BACKGROUND_COLOR_GREEN => FALSE;
 
 ## Singleton support
@@ -242,8 +244,9 @@ sub _load_class_content {
     my $w_coord = 0;
     my $h_coord = 5;
 
-
     foreach my $class_lookup (@{$class_lookup_list}){
+
+        my $max_width = 0;
 
         $class_ctr++;
 
@@ -251,9 +254,11 @@ sub _load_class_content {
 
         push(@{$class_content_stack}, $class_lookup->{package_name}); 
 
-        my $width = length($class_lookup->{package_name}) * 7;
+        my $package_name_width = length($class_lookup->{package_name});
 
-        $w_coord = $width + 10;
+        if ($package_name_width > $max_width){
+            $max_width = $package_name_width;
+        }
 
         if ($self->setBackgroundColorGreen()){
             push(@{$class_content_stack}, "bg=green"); 
@@ -342,6 +347,11 @@ sub _load_class_content {
 
                 push(@{$class_content_stack}, "+$sub()");
 
+                my $sub_name_width = length($sub);
+                if ($sub_name_width > $max_width){
+                    $max_width = $sub_name_width;
+                }
+
                 $ctr++;
             }
 
@@ -356,6 +366,8 @@ sub _load_class_content {
 
         $h_coord += 10;
 
+        $w_coord = ($max_width + 10) * DEFAULT_CLASS_WIDTH_FACTOR;
+
         my $final_lookup = {
             panel_attributes => $panel_attributes,
             x_coord => $x_coord,
@@ -369,7 +381,7 @@ sub _load_class_content {
 
         ## Make sure the next class is rendered to the right of the
         ## current one.
-        $x_coord = $x_coord + $width + 20;
+        $x_coord = $x_coord + $w_coord + 20;
 
         if ($h_coord > $max_height){
 
