@@ -13,7 +13,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 
 use Umlet::Logger;
-use Umlet::PerlAPIToClassDiagram::Converter;
+use Umlet::Perl::API::ClassDiagram::Converter;
 
 use constant TRUE => 1;
 
@@ -70,7 +70,7 @@ if (!defined($logger)){
     die "Could not instantiate Umlet::Logger";
 }
 
-my $converter = Umlet::PerlAPIToClassDiagram::Converter::getInstance(
+my $converter = Umlet::Perl::API::ClassDiagram::Converter::getInstance(
     config_file          => $config_file,
     outdir               => $outdir,
     verbose              => $verbose,
@@ -78,7 +78,7 @@ my $converter = Umlet::PerlAPIToClassDiagram::Converter::getInstance(
     );
 
 if (!defined($converter)){
-    $logger->logdie("Could not instantiate Umlet::Converter");
+    $logger->logdie("Could not instantiate Umlet::Perl::API::ClassDiagram::Converter");
 }
 
 if (defined($indir)){
@@ -210,6 +210,13 @@ sub checkCommandLineArguments {
         $logfile = $outdir . '/' . File::Basename::basename($0) . '.log';
         
     	printYellow("--logfile was not specified and therefore was set to '$logfile'");        
+    }
+
+    if (!defined($outfile)){
+        
+        $outfile = $outdir . '/' . File::Basename::basename($0) . '.uxf';
+        
+        printYellow("--outfile was not specified and therefore was set to '$outfile'");        
     }
 }
 

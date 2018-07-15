@@ -8,6 +8,7 @@ use File::Basename;
 use File::Path;
 use File::Copy;
 use FindBin;
+use Data::Dumper;
 
 use Umlet::Config::Manager;
 
@@ -206,7 +207,7 @@ sub writeFile{
         classes    => join("\n", @{$self->{_classes_content}})
     };
     
-    my $tt = new Template({ABSOLUTE => 1});
+    my $tt = new Template({ABSOLUTE => 1, POST_CHOMP => 3, PRE_CHOMP => 3 });
     if (!defined($tt)){
         $self->{_logger}->logconfess("Could not instantiate TT");
     }
@@ -239,6 +240,7 @@ sub _load_class_content {
     my $w_coord = 0;
     my $h_coord = 5;
 
+
     foreach my $class_lookup (@{$class_lookup_list}){
 
         $class_ctr++;
@@ -248,8 +250,6 @@ sub _load_class_content {
         push(@{$class_content_stack}, $class_lookup->{package_name}); 
 
         my $width = length($class_lookup->{package_name}) * 7;
-
-        push(@{$class_content_stack}, '--');
 
         $w_coord = $width + 10;
 
@@ -307,6 +307,7 @@ sub _load_class_content {
             $h_coord += $ctr;
         }
 
+        push(@{$class_content_stack}, '--');
 
         if (exists $class_lookup->{has_list}){
 
@@ -394,7 +395,7 @@ sub _prepare_umlet_elememnt_content {
     my $self = shift;
     my ($package_name, $final_lookup, $template_file) = @_;
 
-    my $tt = new Template({ABSOLUTE => 1});
+    my $tt = new Template({ABSOLUTE => 1, POST_CHOMP => 3, PRE_CHOMP => 3 });
     if (!defined($tt)){
         $self->{_logger}->logconfess("Could not instantiate TT");
     }
@@ -407,7 +408,7 @@ sub _prepare_umlet_elememnt_content {
 
     my @lines = read_file($tmp_outfile);
 
-    my $umlet_element_content = join("\n", @lines) . "\n";
+    my $umlet_element_content = join('', @lines);
 
     push(@{$self->{_classes_content}}, $umlet_element_content);
 
