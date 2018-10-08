@@ -69,6 +69,15 @@ has 'infile' => (
     required => FALSE
     );
 
+has 'outfile' => (
+    is       => 'rw',
+    isa      => 'Str',
+    writer   => 'setOutfile',
+    reader   => 'getOutfile',
+    required => FALSE
+    );
+
+
 has 'verbose' => (
     is       => 'rw',
     isa      => 'Bool',
@@ -141,6 +150,11 @@ sub _initUmletFileWriter {
         $self->{_logger}->logconfess("Could not instantiate Umlet::File::XML::Writer");
     }
 
+    my $outfile = $self->getOutfile();
+    if (defined($outfile)){
+        $writer->setOutfile($outfile);
+    }
+
     $self->{_writer} = $writer;
 }
 
@@ -180,7 +194,7 @@ sub run {
 sub runConversion {
 
     my $self = shift;
-    
+
 
     my $indir;
 
@@ -260,9 +274,9 @@ sub _get_file_list_from_indir {
 }
 
 sub _execute_cmd {
-    
+
     my $self = shift;
-    
+
     my ($cmd) = @_;
 
     if (!defined($cmd)){
@@ -282,9 +296,9 @@ sub _execute_cmd {
     }
 
     chomp @results;
-    
+
     return \@results;
-}   
+}
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
@@ -295,7 +309,7 @@ __END__
 =head1 NAME
 
  Umlet::Perl::API::ClassDiagram::Converter
- 
+
 
 =head1 VERSION
 

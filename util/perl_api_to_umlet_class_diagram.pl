@@ -13,7 +13,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 
 use Umlet::Logger;
-use Umlet::PerlAPIToClassDiagram::Converter;
+use Umlet::Perl::API::ClassDiagram::Converter;
 
 use constant TRUE => 1;
 
@@ -34,20 +34,20 @@ use constant DEFAULT_CONFIG_FILE => "$Find::Bin/../conf/umlet_converter.ini";
 $|=1; ## do not buffer output stream
 
 ## Parse command line options
-my ($infile, 
+my ($infile,
     $indir,
-    $outdir, 
+    $outdir,
     $outfile,
-    $log_level, 
-    $help, 
-    $logfile, 
+    $log_level,
+    $help,
+    $logfile,
     $man,
-    $verbose, 
+    $verbose,
     $config_file
 );
 
 my $results = GetOptions (
-      'log_level|d=s'           => \$log_level, 
+      'log_level|d=s'           => \$log_level,
       'help|h'                  => \$help,
       'man|m'                   => \$man,
       'infile=s'                => \$infile,
@@ -62,7 +62,7 @@ my $results = GetOptions (
 &checkCommandLineArguments();
 
 my $logger = new Umlet::Logger(
-    logfile   => $logfile, 
+    logfile   => $logfile,
     log_level => $log_level
 );
 
@@ -70,15 +70,14 @@ if (!defined($logger)){
     die "Could not instantiate Umlet::Logger";
 }
 
-my $converter = Umlet::PerlAPIToClassDiagram::Converter::getInstance(
+my $converter = Umlet::Perl::API::ClassDiagram::Converter::getInstance(
     config_file          => $config_file,
     outdir               => $outdir,
-    verbose              => $verbose,
-    outfile              => $outfile
+    verbose              => $verbose
     );
 
 if (!defined($converter)){
-    $logger->logdie("Could not instantiate Umlet::Converter");
+    $logger->logdie("Could not instantiate Umlet::Perl::API::ClassDiagram::Converter");
 }
 
 if (defined($indir)){
@@ -89,6 +88,9 @@ if (defined($infile)){
     $converter->setInfile($infile);
 }
 
+if (defined($outfile)){
+    $converter->setOutfile($outfile);
+}
 
 $converter->run();
 
@@ -129,12 +131,12 @@ sub printYellow {
 }
 
 sub checkCommandLineArguments {
-   
+
     if ($man){
 
     	&pod2usage({-exitval => 1, -verbose => 2, -output => \*STDOUT});
     }
-    
+
     if ($help){
 
     	&pod2usage({-exitval => 1, -verbose => 1, -output => \*STDOUT});
@@ -147,7 +149,7 @@ sub checkCommandLineArguments {
         if (!defined($indir)){
 
             $indir = DEFAULT_INDIR;
-            
+
             printYellow("Neither --infile nor --indir were specified and therefore indir was set to default '$indir'");
         }
 
@@ -171,7 +173,7 @@ sub checkCommandLineArguments {
         $verbose = DEFAULT_VERBOSE;
 
         printYellow("--verbose was not specified and therefore was set to default '$verbose'");
-        
+
     }
 
     if (!defined($config_file)){
@@ -179,14 +181,14 @@ sub checkCommandLineArguments {
         $config_file = DEFAULT_CONFIG_FILE;
 
         printYellow("--config_file was not specified and therefore was set to default '$config_file'");
-        
+
     }
 
     if (!defined($log_level)){
 
         $log_level = DEFAULT_LOG_LEVEL;
-        
-        printYellow("--log_level was not specified and therefore was set to default '$log_level'");        
+
+        printYellow("--log_level was not specified and therefore was set to default '$log_level'");
     }
 
     if (!defined($outdir)){
@@ -199,17 +201,24 @@ sub checkCommandLineArguments {
     if (!-e $outdir){
 
         mkpath ($outdir) || die "Could not create output directory '$outdir' : $!";
-        
-        printYellow("Created output directory '$outdir'");        
+
+        printYellow("Created output directory '$outdir'");
     }
 
     &checkOutdirStatus($outdir);
 
     if (!defined($logfile)){
-    	
+
         $logfile = $outdir . '/' . File::Basename::basename($0) . '.log';
-        
-    	printYellow("--logfile was not specified and therefore was set to '$logfile'");        
+
+    	printYellow("--logfile was not specified and therefore was set to '$logfile'");
+    }
+
+    if (!defined($outfile)){
+
+        $outfile = $outdir . '/' . File::Basename::basename($0) . '.xml';
+
+        printYellow("--outfile was not specified and therefore was set to '$outfile'");
     }
 }
 
@@ -230,7 +239,7 @@ sub getInputFileBasename {
 sub checkInfileStatus {
 
     my ($infile) = @_;
-    
+
     if (!defined($infile)){
         die("infile was not defined");
     }
@@ -238,24 +247,24 @@ sub checkInfileStatus {
     my $errorCtr = 0 ;
 
     if (!-e $infile){
-    
+
         printBoldRed("input file '$infile' does not exist");
-        
+
         $errorCtr++;
     }
     else {
 
         if (!-f $infile){
-        
+
             printBoldRed("'$infile' is not a regular file");
-        
+
             $errorCtr++;
         }
 
         if (!-r $infile){
-            
+
             printBoldRed("input file '$infile' does not have read permissions");
-            
+
             $errorCtr++;
         }
 
@@ -268,9 +277,9 @@ sub checkInfileStatus {
     }
 
     if ($errorCtr > 0){
-        
+
         printBoldRed("Encountered issues with input file '$infile'");
-        
+
         exit(1);
     }
 }
@@ -280,15 +289,15 @@ sub checkOutdirStatus {
     my ($outdir) = @_;
 
     if (!-e $outdir){
-        
+
         mkpath($outdir) || die "Could not create output directory '$outdir' : $!";
-        
-        printYellow("Created output directory '$outdir'");        
+
+        printYellow("Created output directory '$outdir'");
     }
-    
+
     if (!-d $outdir){
-        
+
         printBoldRed("'$outdir' is not a regular directory");
-        
+
     }
 }
