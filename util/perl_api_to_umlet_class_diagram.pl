@@ -1,5 +1,4 @@
 #!/usr/bin/env perl
-
 use strict;
 use Cwd;
 use Carp;
@@ -9,6 +8,7 @@ use File::Spec;
 use Term::ANSIColor;
 use Getopt::Long qw(:config no_ignore_case no_auto_abbrev);
 use FindBin;
+use Pod::Usage;
 
 use lib "$FindBin::Bin/../lib";
 
@@ -301,3 +301,82 @@ sub checkOutdirStatus {
 
     }
 }
+
+
+__END__
+
+=head1 NAME
+
+ perl_api_to_umlet_class_diagram.pl - Program that parses a Perl API and then creates a set of Umlet class diagrams.
+
+=head1 SYNOPSIS
+
+ perl util/perl_api_to_umlet_class_diagram.pl --indir ~/projects/my-perl-project
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<--indir>
+
+  A directory under which all Perl modules discovered will be processed and included
+  in the set of Umlet class diagrams.
+  Default is the current working directory.
+
+=item B<--infile>
+
+  A specific Perl module that should be processed.
+
+=item B<--help|-h>
+
+  Print a brief help message and exits.
+
+=item B<--logfile>
+
+  The Log4perl log file
+  Default is [outdir]/perl_api_to_umlet_class_diagram.pl.log
+
+=item B<--log_level>
+
+  The Log4perl logging level
+  Default is 4 i.e.: INFO
+
+=item B<--man|-m>
+
+  Prints the manual page and exits.
+
+=item B<--outdir>
+
+  The output directory were the logfile will be written to.
+  The output file will also be written to this output directory
+  if the --outfile option is not explicity specified on invocation
+  of this program.
+  Default is /tmp/perl_api_to_umlet_class_diagram.pl/[time]/
+
+=item B<--outfile>
+
+  The output XML file that this program will create
+  The output XML file should be opened using Umlet.  the prepare reporting script.
+  Default is /tmp/perl_api_to_umlet_class_diagram.pl/[time]/out.xml
+
+=item B<--verbose>
+
+  If set to true (i.e.: 1) then will print more details to STDOUT.
+  Default is false (i.e.: 0)
+
+=back
+
+=head1 DESCRIPTION
+
+  This program will parse all of the Perl module files it finds under the specified
+  input directory or just the one Perl module file if the --infile option is specified.
+
+=head1 CONTACT
+
+ Jaideep Sundaram clinbioinfo@github.com
+
+ Copyright Jaideep Sundaram
+
+ Can be distributed under GNU General Public License terms
+
+=cut
