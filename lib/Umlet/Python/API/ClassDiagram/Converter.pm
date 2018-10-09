@@ -257,10 +257,12 @@ sub runConversion {
                     $plookup->{sub_list} = $lookup->{$class}->{method_list};
                 }
 
+                if (exists $lookup->{$class}->{use_list}){
+                    $plookup->{use_list} = $lookup->{$class}->{use_list};
+                }
+
                 push(@{$self->{_class_lookup_list}}, $plookup);
-
             }
-
         }
 
         if ($self->getVerbose()){

@@ -1,6 +1,7 @@
 package Umlet::Python::Module::File::Parser;
 
 use Moose;
+use Data::Dumper;
 use Cwd;
 use Term::ANSIColor;
 use File::Slurp;
@@ -198,6 +199,8 @@ sub _parse_file {
 
     my $current_class;
 
+    my $import_list = [];
+
     foreach my $line (@lines){
 
         chomp $line;
@@ -214,6 +217,15 @@ sub _parse_file {
         }
         elsif ($line =~ m|^class\s+(\S+)\(\S*\)\s*:\s*$|){
 
+            if (defined($current_class)){
+
+                for my $import (@{$import_list}){
+                    push(@{$self->{_lookup}->{$current_class}->{use_list}}, $import);
+                }
+
+                $import_list = [];
+            }
+
             $current_class = $self->_get_class_with_namespace($1, $infile);
 
             my $inherits_from = $2;
@@ -223,12 +235,12 @@ sub _parse_file {
         elsif ($line =~ m|^\s+def (\S+)\(.+\):\s*$|){
             push(@{$self->{_lookup}->{$current_class}->{method_list}}, $1);
         }
-        # elsif ($line =~ m|^from|){
-        #     push(@{$self->{_lookup}->{$current_class}->{import_list}}, $1);
-        # }
-        # elsif ($line =~ m|^import|){
-        #     push(@{$self->{_lookup}->{$current_class}->{import_list}}, $1);
-        # }
+        elsif ($line =~ m|^from|){
+            push(@{$import_list}, $line);
+        }
+        elsif ($line =~ m|^import|){
+            push(@{$import_list}, $line);
+        }
     }
 
     $self->{_is_parsed} = TRUE;

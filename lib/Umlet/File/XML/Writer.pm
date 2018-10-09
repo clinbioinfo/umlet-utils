@@ -191,7 +191,7 @@ sub writeFile{
     }
 
 
-    $self->_load_class_content($class_lookup_list);    
+    $self->_load_class_content($class_lookup_list);
 
     my $umlet_template_file = $self->getUmletTemplateFile();
 
@@ -205,7 +205,7 @@ sub writeFile{
         zoom_level => $self->getZoomLevel(),
         classes    => join("\n", @{$self->{_classes_content}})
     };
-    
+
     my $tt = new Template({ABSOLUTE => 1});
     if (!defined($tt)){
         $self->{_logger}->logconfess("Could not instantiate TT");
@@ -217,7 +217,7 @@ sub writeFile{
 
     print "Wrote '$outfile'\n";
 }
- 
+
 sub _load_class_content {
 
     my $self = shift;
@@ -245,7 +245,7 @@ sub _load_class_content {
 
         my $class_content_stack = [];
 
-        push(@{$class_content_stack}, $class_lookup->{package_name}); 
+        push(@{$class_content_stack}, $class_lookup->{package_name});
 
         my $width = length($class_lookup->{package_name}) * 7;
 
@@ -254,7 +254,7 @@ sub _load_class_content {
         $w_coord = $width + 10;
 
         if ($self->setBackgroundColorGreen()){
-            push(@{$class_content_stack}, "bg=green"); 
+            push(@{$class_content_stack}, "bg=green");
         }
 
 
@@ -264,7 +264,12 @@ sub _load_class_content {
 
             foreach my $use (sort @{$class_lookup->{use_list}}){
 
-                push(@{$class_content_stack}, "//use $use");
+                if ($use =~ /import/){
+                    push(@{$class_content_stack}, "//$use");
+                }
+                else {
+                    push(@{$class_content_stack}, "//use $use");
+                }
 
                 $ctr++;
             }
@@ -287,7 +292,7 @@ sub _load_class_content {
 
             # push(@{$class_content_stack}, "\n");
 
-            $h_coord += $ctr;   
+            $h_coord += $ctr;
         }
 
 
@@ -315,7 +320,7 @@ sub _load_class_content {
             foreach my $has (sort @{$class_lookup->{has_list}}){
 
                 # $has =~ s|:|_|g;
-                
+
                 # $has =~ s|\-|_|g;
 
                 push(@{$class_content_stack}, "-$has");
@@ -359,7 +364,7 @@ sub _load_class_content {
             w_coord => $w_coord
         };
 
-        
+
         $self->_prepare_umlet_elememnt_content($class_lookup->{package_name}, $final_lookup, $template_file);
 
         ## Make sure the next class is rendered to the right of the
@@ -380,7 +385,7 @@ sub _load_class_content {
             $x_coord = 10; ## reset
 
             $y_coord = $y_coord + $max_height; ## set the y_coord for the next row of classes
-            
+
             $max_height = 0; ## reset
         }
 
@@ -402,7 +407,7 @@ sub _prepare_umlet_elememnt_content {
     my $tmp_outfile = $self->getOutdir() . '/out.uxf';
 
     $tt->process($template_file, $final_lookup, $tmp_outfile) || $self->{_logger}->logconfess("Encountered the following Template::process error:" . $tt->error());
-    
+
     $self->{_logger}->info("Umlet element content for package '$package_name' was written to temporary output file '$tmp_outfile'");
 
     my @lines = read_file($tmp_outfile);
@@ -421,7 +426,7 @@ sub _get_outfile {
     my $self = shift;
 
     my $outfile = $self->getOutfile();
-    
+
     if (!defined($outfile)){
 
         my $outdir = $self->getOutdir();
@@ -429,7 +434,7 @@ sub _get_outfile {
         if (!-e $outdir){
 
             mkpath($outdir) || $self->{_logger}->logconfess("Could not create output directory '$outdir' : $!");
-            
+
             $self->{_logger}->info("Created output directory '$outdir'");
         }
 
@@ -476,23 +481,23 @@ sub _checkTemplateFileStatus {
         $errorCtr++;
     }
     else {
-        
+
         if (!-f $file){
             $self->{_logger}->fatal("'$file' is not a regular file");
             $errorCtr++;
         }
-        
+
         if (!-r $file){
             $self->{_logger}->fatal("input template file '$file' does not have read permissions");
             $errorCtr++;
         }
-        
+
         if (!-s $file){
             $self->{_logger}->fatal("input template file '$file' does not have any content");
             $errorCtr++;
         }
     }
-    
+
     if ($errorCtr > 0){
         $self->{_logger}->fatal("Encountered issues with input template file '$file'");
         return FALSE;
@@ -511,7 +516,7 @@ __END__
 =head1 NAME
 
  Umlet::File::XML::Writer
- 
+
 
 =head1 VERSION
 
