@@ -257,7 +257,6 @@ sub _load_class_content {
             push(@{$class_content_stack}, "bg=green");
         }
 
-
         if (exists $class_lookup->{use_list}){
 
             my $ctr = 0;
@@ -333,6 +332,19 @@ sub _load_class_content {
             $h_coord += $ctr;
         }
 
+        if (exists $class_lookup->{private_data_member_list}){
+
+            my $ctr = 0;
+
+            foreach my $member (sort @{$class_lookup->{private_data_member_list}}){
+
+                push(@{$class_content_stack}, $member);
+
+                $ctr++;
+            }
+
+            $h_coord += $ctr;
+        }
 
         push(@{$class_content_stack}, '--');
 

@@ -241,6 +241,10 @@ sub _parse_file {
         elsif ($line =~ m|^import|){
             push(@{$import_list}, $line);
         }
+        elsif ($line =~ m|\s+self\.(.+)\s*=|){
+            push(@{$self->{_lookup}->{$current_class}->{private_data_member_list}}, $1);
+        }
+
     }
 
     $self->{_is_parsed} = TRUE;

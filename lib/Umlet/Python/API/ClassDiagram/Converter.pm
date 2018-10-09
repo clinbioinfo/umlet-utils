@@ -261,6 +261,10 @@ sub runConversion {
                     $plookup->{use_list} = $lookup->{$class}->{use_list};
                 }
 
+                if (exists $lookup->{$class}->{private_data_member_list}){
+                    $plookup->{private_data_member_list} = $lookup->{$class}->{private_data_member_list};
+                }
+
                 push(@{$self->{_class_lookup_list}}, $plookup);
             }
         }
