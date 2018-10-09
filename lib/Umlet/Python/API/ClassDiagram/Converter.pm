@@ -52,6 +52,14 @@ has 'outdir' => (
     default  => DEFAULT_OUTDIR
     );
 
+has 'outfile' => (
+    is       => 'rw',
+    isa      => 'Str',
+    writer   => 'setOutfile',
+    reader   => 'getOutfile',
+    required => FALSE
+    );
+
 has 'indir' => (
     is       => 'rw',
     isa      => 'Str',
@@ -141,6 +149,11 @@ sub _initUmletFileWriter {
         $self->{_logger}->logconfess("Could not instantiate Umlet::File::XML::Writer");
     }
 
+    my $outfile = $self->getOutfile();
+    if (defined($outfile)){
+        $writer->setOutfile($outfile);
+    }
+
     $self->{_writer} = $writer;
 }
 
@@ -221,6 +234,11 @@ sub runConversion {
 
             if (!defined($parser)){
                 $self->{_logger}->logconfess("Could not instantiate Umlet::Python::Module::File::Parser");
+            }
+
+            my $indir = $self->getIndir();
+            if (defined($indir)){
+                $parser->setIndir($indir);
             }
 
             my $lookup = $parser->getLookup();

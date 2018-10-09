@@ -58,6 +58,22 @@ has 'infile' => (
     required => FALSE
     );
 
+has 'indir' => (
+    is       => 'rw',
+    isa      => 'Str',
+    writer   => 'setIndir',
+    reader   => 'getIndir',
+    required => FALSE
+    );
+
+has 'namespace' => (
+    is       => 'rw',
+    isa      => 'Str',
+    writer   => 'setNamespace',
+    reader   => 'getNamespace',
+    required => FALSE
+    );
+
 has 'verbose' => (
     is       => 'rw',
     isa      => 'Bool',
@@ -184,8 +200,6 @@ sub _parse_file {
 
     foreach my $line (@lines){
 
-        print $line;
-
         chomp $line;
 
         $line_ctr++;
@@ -200,7 +214,7 @@ sub _parse_file {
         }
         elsif ($line =~ m|^class\s+(\S+)\(\S*\)\s*:\s*$|){
 
-            $current_class = $1;
+            $current_class = $self->_get_class_with_namespace($1, $infile);
 
             my $inherits_from = $2;
 
@@ -220,6 +234,42 @@ sub _parse_file {
     $self->{_is_parsed} = TRUE;
 }
 
+sub _get_class_with_namespace {
+
+    my $self = shift;
+    my ($class, $infile) = @_;
+
+    my $namespace = $self->_get_namespace($infile);
+
+    my $current_class = $namespace . '.' . $class;
+
+    $current_class =~ s|/|\.|g;
+
+    $current_class =~ s/^\.//;
+
+    return $current_class;
+}
+
+sub _get_namespace {
+
+    my $self = shift;
+    my ($infile) = @_;
+
+    my $namespace = $self->getNamespace();
+
+    if (!defined($namespace)){
+
+        my $indir = $self->getIndir();
+
+        $namespace = $infile;
+
+        $namespace =~ s/$indir//;
+
+        $self->setNamespace($namespace);
+    }
+
+    return $namespace;
+}
 
 
 no Moose;
