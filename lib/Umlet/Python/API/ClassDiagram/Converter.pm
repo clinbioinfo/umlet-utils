@@ -180,7 +180,7 @@ sub run {
 sub runConversion {
 
     my $self = shift;
-    
+
 
     my $indir;
 
@@ -225,10 +225,24 @@ sub runConversion {
 
             my $lookup = $parser->getLookup();
             if (!defined($lookup)){
-                $self->{_logger}->logconfess("lookup was not defined for file '$file'");
+                $self->{_logger}->warn("lookup was not defined for file '$file'");
+                next;
             }
 
-            push(@{$self->{_class_lookup_list}}, $lookup);
+            for my $class (sort keys %{$lookup}){
+
+                my $plookup = {};
+
+                $plookup->{package_name} = $class;
+
+                if (exists $lookup->{$class}->{method_list}){
+                    $plookup->{sub_list} = $lookup->{$class}->{method_list};
+                }
+
+                push(@{$self->{_class_lookup_list}}, $plookup);
+
+            }
+
         }
 
         if ($self->getVerbose()){
@@ -260,9 +274,9 @@ sub _get_file_list_from_indir {
 }
 
 sub _execute_cmd {
-    
+
     my $self = shift;
-    
+
     my ($cmd) = @_;
 
     if (!defined($cmd)){
@@ -282,9 +296,9 @@ sub _execute_cmd {
     }
 
     chomp @results;
-    
+
     return \@results;
-}   
+}
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
@@ -295,7 +309,7 @@ __END__
 =head1 NAME
 
  Umlet::Python::API::ClassDiagram::Converter
- 
+
 
 =head1 VERSION
 

@@ -180,33 +180,41 @@ sub _parse_file {
 
     my $line_ctr = 0;
 
+    my $current_class;
+
     foreach my $line (@lines){
-    
+
+        print $line;
+
         chomp $line;
-    
+
         $line_ctr++;
-    
+
+        if ($line =~ m/__name__ == '__main__':/){
+            $self->{_lookup} = {};
+            return;
+        }
+
         if ($line =~ m|^\s*$|){
             next;
         }
-        elsif ($line =~ m|^package\s+(\S+)\s*;\s*$|){
-            $self->{_lookup}->{package_name} = $1;
+        elsif ($line =~ m|^class\s+(\S+)\(\S*\)\s*:\s*$|){
+
+            $current_class = $1;
+
+            my $inherits_from = $2;
+
+            $self->{_lookup}->{$current_class}->{inherits_from} = $inherits_from;
         }
-        elsif ($line =~ m|^sub (\S+)\s*\{\s*$|){
-            push(@{$self->{_lookup}->{sub_list}}, $1);
+        elsif ($line =~ m|^\s+def (\S+)\(.+\):\s*$|){
+            push(@{$self->{_lookup}->{$current_class}->{method_list}}, $1);
         }
-        elsif ($line =~ m|^use constant (\S+)\s*=>\s*(\S+)$|){
-            push(@{$self->{_lookup}->{constant_list}}, [$1, $2]);
-        }
-        elsif ($line =~ m|^extends \'(\S+)\';\s*$|){
-            push(@{$self->{_lookup}->{extends_list}}, $1);
-        }
-        elsif ($line =~ m|^use (\S+);\s*$|){
-            push(@{$self->{_lookup}->{use_list}}, $1);
-        }
-        elsif ($line =~ m|^has \'(\S+)\'|){
-            push(@{$self->{_lookup}->{has_list}}, $1);
-        }
+        # elsif ($line =~ m|^from|){
+        #     push(@{$self->{_lookup}->{$current_class}->{import_list}}, $1);
+        # }
+        # elsif ($line =~ m|^import|){
+        #     push(@{$self->{_lookup}->{$current_class}->{import_list}}, $1);
+        # }
     }
 
     $self->{_is_parsed} = TRUE;
@@ -223,7 +231,7 @@ __END__
 =head1 NAME
 
  Umlet::Python::Module::File::Parser
- 
+
 
 =head1 VERSION
 
