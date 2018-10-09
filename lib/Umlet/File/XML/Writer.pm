@@ -8,6 +8,7 @@ use File::Basename;
 use File::Path;
 use File::Copy;
 use FindBin;
+use Data::Dumper;
 
 use Umlet::Config::Manager;
 
@@ -30,6 +31,10 @@ use constant DEFAULT_TEMPLATE_UMLET_FILE => "$FindBin::Bin/../template/umlet_xml
 use constant DEFAULT_TEMPLATE_CLASS_FILE => "$FindBin::Bin/../template/class_element_xml_tmpl.tt";
 
 use constant DEFAULT_ZOOM_LEVEL => 10;
+
+use constant DEFAULT_HEIGHT_FACTOR => 25;
+
+use constant DEFAULT_CLASS_WIDTH_FACTOR => 7;
 
 use constant DEFAULT_SET_BACKGROUND_COLOR_GREEN => FALSE;
 
@@ -206,7 +211,7 @@ sub writeFile{
         classes    => join("\n", @{$self->{_classes_content}})
     };
 
-    my $tt = new Template({ABSOLUTE => 1});
+    my $tt = new Template({ABSOLUTE => 1, POST_CHOMP => 3, PRE_CHOMP => 3 });
     if (!defined($tt)){
         $self->{_logger}->logconfess("Could not instantiate TT");
     }
@@ -241,17 +246,19 @@ sub _load_class_content {
 
     foreach my $class_lookup (@{$class_lookup_list}){
 
+        my $max_width = 0;
+
         $class_ctr++;
 
         my $class_content_stack = [];
 
         push(@{$class_content_stack}, $class_lookup->{package_name});
 
-        my $width = length($class_lookup->{package_name}) * 7;
+        my $package_name_width = length($class_lookup->{package_name});
 
-        push(@{$class_content_stack}, '--');
-
-        $w_coord = $width + 10;
+        if ($package_name_width > $max_width){
+            $max_width = $package_name_width;
+        }
 
         if ($self->setBackgroundColorGreen()){
             push(@{$class_content_stack}, "bg=green");
@@ -311,6 +318,7 @@ sub _load_class_content {
             $h_coord += $ctr;
         }
 
+        push(@{$class_content_stack}, '--');
 
         if (exists $class_lookup->{has_list}){
 
@@ -354,12 +362,26 @@ sub _load_class_content {
 
             foreach my $sub (sort @{$class_lookup->{sub_list}}){
 
-                push(@{$class_content_stack}, "+$sub()");
+                if ($sub =~ /^_/){
+                    $sub = '-' . $sub;
+                }
+                else {
+                    $sub = '+' . $sub;
+                }
+
+                push(@{$class_content_stack}, "$sub()");
+
+                my $sub_name_width = length($sub);
+                if ($sub_name_width > $max_width){
+                    $max_width = $sub_name_width;
+                }
 
                 $ctr++;
             }
 
             # push(@{$class_content_stack}, "\n");
+
+            $ctr *= DEFAULT_HEIGHT_FACTOR;
 
             $h_coord += $ctr;
         }
@@ -367,6 +389,8 @@ sub _load_class_content {
         my $panel_attributes = join("\n", @{$class_content_stack});
 
         $h_coord += 10;
+
+        $w_coord = ($max_width + 10) * DEFAULT_CLASS_WIDTH_FACTOR;
 
         my $final_lookup = {
             panel_attributes => $panel_attributes,
@@ -381,7 +405,7 @@ sub _load_class_content {
 
         ## Make sure the next class is rendered to the right of the
         ## current one.
-        $x_coord = $x_coord + $width + 20;
+        $x_coord = $x_coord + $w_coord + 20;
 
         if ($h_coord > $max_height){
 
@@ -390,7 +414,7 @@ sub _load_class_content {
 
         # $h_coord = $h_coord * 3;
 
-        if ($class_ctr == MAX_CLASS_PER_ROW){
+        if ($class_ctr % MAX_CLASS_PER_ROW == 0){
 
             ## Have processed 5 classes time to move to the next line
 
@@ -411,7 +435,7 @@ sub _prepare_umlet_elememnt_content {
     my $self = shift;
     my ($package_name, $final_lookup, $template_file) = @_;
 
-    my $tt = new Template({ABSOLUTE => 1});
+    my $tt = new Template({ABSOLUTE => 1, POST_CHOMP => 3, PRE_CHOMP => 3 });
     if (!defined($tt)){
         $self->{_logger}->logconfess("Could not instantiate TT");
     }
@@ -424,7 +448,7 @@ sub _prepare_umlet_elememnt_content {
 
     my @lines = read_file($tmp_outfile);
 
-    my $umlet_element_content = join("\n", @lines) . "\n";
+    my $umlet_element_content = join('', @lines);
 
     push(@{$self->{_classes_content}}, $umlet_element_content);
 

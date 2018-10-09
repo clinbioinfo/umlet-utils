@@ -220,6 +220,13 @@ sub checkCommandLineArguments {
 
         printYellow("--outfile was not specified and therefore was set to '$outfile'");
     }
+
+    if (!defined($outfile)){
+        
+        $outfile = $outdir . '/' . File::Basename::basename($0) . '.uxf';
+        
+        printYellow("--outfile was not specified and therefore was set to '$outfile'");        
+    }
 }
 
 sub getInputFileBasename {

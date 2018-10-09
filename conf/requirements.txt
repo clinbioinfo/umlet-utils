@@ -1,0 +1,7 @@
+cpanm Log::Log4perl
+cpanm Moose
+cpanm Config::IniFiles
+cpanm File::Slurp
+cpanm XML::Twig
+cpanm String::CamelCase
+cpanm Template

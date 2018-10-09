@@ -87,6 +87,13 @@ has 'verbose' => (
     default  => DEFAULT_VERBOSE
     );
 
+has 'outfile' => (
+    is       => 'rw',
+    isa      => 'Str',
+    writer   => 'setOutfile',
+    reader   => 'getOutfile',
+    required => FALSE
+    );
 
 
 sub getInstance {
