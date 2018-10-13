@@ -2,4 +2,23 @@
 <diagram program="umlet" version="13.0">
   <zoom_level>[% zoom_level %]</zoom_level>
   [% classes %]
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>880</x>
+      <y>340</y>
+      <w>[% note_width %]</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>bg=yellow
+indir: [% indir %]
+
+method-created: [% method_created %]
+
+date-created: [% date_created %]
+
+created-by: [% created_by %]
+    </panel_attributes>
+    <additional_attributes/>
+  </element>
 </diagram>

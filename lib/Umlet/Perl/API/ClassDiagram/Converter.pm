@@ -162,6 +162,11 @@ sub _initUmletFileWriter {
         $writer->setOutfile($outfile);
     }
 
+    my $indir = $self->getIndir();
+    if (defined($indir)){
+        $writer->setIndir($indir);
+    }
+
     $self->{_writer} = $writer;
 }
 

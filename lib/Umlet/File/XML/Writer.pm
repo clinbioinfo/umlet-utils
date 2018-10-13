@@ -134,6 +134,13 @@ has 'set_background_color_green' => (
     default  => DEFAULT_SET_BACKGROUND_COLOR_GREEN
     );
 
+has 'indir' => (
+    is       => 'rw',
+    isa      => 'Str',
+    writer   => 'setIndir',
+    reader   => 'getIndir',
+    required => FALSE
+    );
 
 sub getInstance {
 
@@ -206,9 +213,31 @@ sub writeFile{
 
     my $outfile = $self->_get_outfile();
 
+    my $date_created = localtime();
+    my $method_created = File::Spec->rel2abs($0);
+    my $created_by = getlogin;
+    my $indir = $self->getIndir();
+    if (!defined($indir)){
+        $indir = 'N/A';
+    }
+
+    my $note_width = length($method_created);
+    if ($note_width < length($indir)){
+        $note_width = length($indir);
+    }
+
+    $note_width *= 9;
+
+    $self->{_logger}->info("Set note width to '$note_width'");
+
     my $final_lookup = {
         zoom_level => $self->getZoomLevel(),
-        classes    => join("\n", @{$self->{_classes_content}})
+        classes    => join("\n", @{$self->{_classes_content}}),
+        indir      => "$indir\n",
+        date_created   => "$date_created\n",
+        method_created => "$method_created\n",
+        created_by     => "$created_by\n",
+        note_width     => $note_width
     };
 
     my $tt = new Template({ABSOLUTE => 1, POST_CHOMP => 3, PRE_CHOMP => 3 });
@@ -220,7 +249,7 @@ sub writeFile{
 
     $self->{_logger}->info("Created file '$outfile' using template file '$umlet_template_file'");
 
-    print "Wrote '$outfile'\n";
+    print "\nWrote '$outfile'\n";
 }
 
 sub _load_class_content {
