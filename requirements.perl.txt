@@ -1,0 +1,5 @@
+  sudo cpanm Log::Log4perl
+  sudo cpanm Moose
+  sudo cpanm Config::IniFiles
+  sudo cpanm Template
+  sudo cpanm String::CamelCase
